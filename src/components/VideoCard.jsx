@@ -12,7 +12,7 @@ const VideoCard = ({ video, onClick }) => {
           transform: 'translateY(-4px)',
           boxShadow: 4,
         },
-        height: '100%',
+        height: 320,
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -26,6 +26,7 @@ const VideoCard = ({ video, onClick }) => {
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
+          flexShrink: 0,
         }}
       >
         <Box
@@ -43,11 +44,37 @@ const VideoCard = ({ video, onClick }) => {
           </Typography>
         </Box>
       </CardMedia>
-      <CardContent sx={{ flexGrow: 1 }}>
-        <Typography variant="h6" component="h2" noWrap>
+      <CardContent
+        sx={{
+          height: 120,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          overflow: 'hidden',
+          flexShrink: 0,
+        }}
+      >
+        <Typography
+          variant="h6"
+          component="h2"
+          sx={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            mb: 1,
+          }}
+        >
           {video.title}
         </Typography>
-        <Typography variant="body2" color="text.secondary" noWrap>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {video.filename}
         </Typography>
       </CardContent>

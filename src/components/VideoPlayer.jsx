@@ -1,10 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import {
   Box,
-  Dialog,
-  DialogContent,
   IconButton,
   Typography,
+  Paper,
+  Divider,
 } from '@mui/material';
 import { Close } from '@mui/icons-material';
 import VideoControls from './VideoControls';
@@ -13,7 +13,6 @@ import { getVideoStreamUrl } from '../services/api';
 const VideoPlayer = ({
   video,
   videos,
-  open,
   onClose,
   onPrevious,
   onNext,
@@ -30,7 +29,7 @@ const VideoPlayer = ({
   const hasNext = currentIndex < videos.length - 1;
 
   useEffect(() => {
-    if (video && open) {
+    if (video) {
       const videoElement = videoRef.current;
       if (videoElement) {
         videoElement.load();
@@ -38,7 +37,7 @@ const VideoPlayer = ({
         videoElement.muted = isMuted;
       }
     }
-  }, [video, open, volume, isMuted]);
+  }, [video, volume, isMuted]);
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -93,17 +92,23 @@ const VideoPlayer = ({
       videoElement.removeEventListener('pause', handlePause);
       videoElement.removeEventListener('ended', handleEnded);
     };
-  }, [video, open]); // Re-attach listeners when video or open state changes
+  }, [video]); // Re-attach listeners when video changes
 
   const handlePlayPause = () => {
     const videoElement = videoRef.current;
     if (!videoElement) return;
 
-    // Check the actual video element's paused property instead of React state
-    // This avoids race conditions where state might not be updated yet
-    if (videoElement.paused) {
+    // Update state immediately based on current paused state
+    // This ensures the icon updates synchronously before the video action
+    const willBePlaying = videoElement.paused;
+    setIsPlaying(willBePlaying);
+
+    // Then perform the play/pause action
+    if (willBePlaying) {
       videoElement.play().catch((error) => {
         console.error('Error playing video:', error);
+        // Revert state if play fails
+        setIsPlaying(false);
       });
     } else {
       videoElement.pause();
@@ -128,7 +133,7 @@ const VideoPlayer = ({
   useEffect(() => {
     // Keyboard shortcuts
     const handleKeyPress = (e) => {
-      if (!open) return;
+      if (!video) return;
 
       const videoElement = videoRef.current;
       if (!videoElement) return;
@@ -168,7 +173,7 @@ const VideoPlayer = ({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [open, volume, duration]);
+  }, [video, volume, duration]);
 
   const handleSeek = (value) => {
     const videoElement = videoRef.current;
@@ -216,19 +221,16 @@ const VideoPlayer = ({
   if (!video) return null;
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="lg"
-      fullWidth
-      PaperProps={{
-        sx: {
-          backgroundColor: 'black',
-          maxHeight: '90vh',
-        },
+    <Paper
+      elevation={3}
+      sx={{
+        mb: 4,
+        backgroundColor: 'black',
+        borderRadius: 2,
+        overflow: 'hidden',
       }}
     >
-      <DialogContent sx={{ p: 0, position: 'relative' }}>
+      <Box sx={{ position: 'relative', width: '100%' }}>
         <IconButton
           onClick={onClose}
           sx={{
@@ -237,23 +239,31 @@ const VideoPlayer = ({
             right: 8,
             zIndex: 10,
             color: 'white',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
             '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
             },
           }}
+          aria-label="Close video player"
         >
           <Close />
         </IconButton>
 
-        <Box sx={{ position: 'relative', width: '100%' }}>
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            maxHeight: '60vh',
+            backgroundColor: 'black',
+          }}
+        >
           <video
             ref={videoRef}
             src={getVideoStreamUrl(video.id)}
             controls={false}
             style={{
               width: '100%',
-              maxHeight: '70vh',
+              maxHeight: '60vh',
               display: 'block',
             }}
             onLoadedMetadata={() => {
@@ -286,14 +296,14 @@ const VideoPlayer = ({
           />
         </Box>
 
-        <Box sx={{ p: 2, backgroundColor: 'background.paper' }}>
+        <Box sx={{ p: 2, backgroundColor: 'background.paper', mt: 0 }}>
           <Typography variant="h6">{video.title}</Typography>
           <Typography variant="body2" color="text.secondary">
             {video.filename}
           </Typography>
         </Box>
-      </DialogContent>
-    </Dialog>
+      </Box>
+    </Paper>
   );
 };
 

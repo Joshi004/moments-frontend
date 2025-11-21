@@ -7,7 +7,6 @@ import { getVideos } from '../services/api';
 const HomePage = () => {
   const [videos, setVideos] = useState([]);
   const [selectedVideo, setSelectedVideo] = useState(null);
-  const [playerOpen, setPlayerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -31,11 +30,9 @@ const HomePage = () => {
 
   const handleVideoClick = (video) => {
     setSelectedVideo(video);
-    setPlayerOpen(true);
   };
 
   const handleClosePlayer = () => {
-    setPlayerOpen(false);
     setSelectedVideo(null);
   };
 
@@ -69,19 +66,21 @@ const HomePage = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <>
-          <VideoGrid videos={videos} onVideoClick={handleVideoClick} />
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          {/* Video Player at the top when a video is selected */}
           {selectedVideo && (
             <VideoPlayer
               video={selectedVideo}
               videos={videos}
-              open={playerOpen}
               onClose={handleClosePlayer}
               onPrevious={handlePreviousVideo}
               onNext={handleNextVideo}
             />
           )}
-        </>
+
+          {/* Video Grid below the player */}
+          <VideoGrid videos={videos} onVideoClick={handleVideoClick} />
+        </Box>
       )}
     </Container>
   );
