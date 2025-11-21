@@ -5,10 +5,12 @@ import {
   Typography,
   Paper,
   Divider,
+  Button,
 } from '@mui/material';
-import { Close } from '@mui/icons-material';
+import { Close, Add } from '@mui/icons-material';
 import VideoControls from './VideoControls';
-import { getVideoStreamUrl } from '../services/api';
+import AddMomentDialog from './AddMomentDialog';
+import { getVideoStreamUrl, getMoments, addMoment } from '../services/api';
 
 const VideoPlayer = ({
   video,
@@ -23,6 +25,8 @@ const VideoPlayer = ({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(100);
   const [isMuted, setIsMuted] = useState(false);
+  const [moments, setMoments] = useState([]);
+  const [isAddMomentDialogOpen, setIsAddMomentDialogOpen] = useState(false);
 
   const currentIndex = videos.findIndex((v) => v.id === video?.id);
   const hasPrevious = currentIndex > 0;
@@ -36,8 +40,32 @@ const VideoPlayer = ({
         videoElement.volume = volume / 100;
         videoElement.muted = isMuted;
       }
+      // Fetch moments when video changes
+      fetchMoments();
     }
   }, [video, volume, isMuted]);
+
+  const fetchMoments = async () => {
+    if (!video) return;
+    try {
+      const momentsData = await getMoments(video.id);
+      setMoments(momentsData);
+    } catch (error) {
+      console.error('Error fetching moments:', error);
+      setMoments([]);
+    }
+  };
+
+  const handleAddMoment = async (moment) => {
+    if (!video) return;
+    try {
+      await addMoment(video.id, moment);
+      // Refresh moments after successful addition
+      await fetchMoments();
+    } catch (error) {
+      throw error; // Re-throw to let dialog handle error display
+    }
+  };
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -293,16 +321,36 @@ const VideoPlayer = ({
             onNext={handleNext}
             hasPrevious={hasPrevious}
             hasNext={hasNext}
+            moments={moments}
           />
         </Box>
 
         <Box sx={{ p: 2, backgroundColor: 'background.paper', mt: 0 }}>
-          <Typography variant="h6">{video.title}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {video.filename}
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              <Typography variant="h6">{video.title}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {video.filename}
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setIsAddMomentDialogOpen(true)}
+              sx={{ ml: 2 }}
+            >
+              Add Moment
+            </Button>
+          </Box>
         </Box>
       </Box>
+
+      <AddMomentDialog
+        open={isAddMomentDialogOpen}
+        onClose={() => setIsAddMomentDialogOpen(false)}
+        onSave={handleAddMoment}
+        videoDuration={duration}
+      />
     </Paper>
   );
 };

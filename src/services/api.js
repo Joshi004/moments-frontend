@@ -37,6 +37,26 @@ export const getThumbnailUrl = (videoId) => {
   return `${API_BASE_URL}/videos/${videoId}/thumbnail`;
 };
 
+export const getMoments = async (videoId) => {
+  try {
+    const response = await api.get(`/videos/${videoId}/moments`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching moments:', error);
+    throw error;
+  }
+};
+
+export const addMoment = async (videoId, moment) => {
+  try {
+    const response = await api.post(`/videos/${videoId}/moments`, moment);
+    return response.data;
+  } catch (error) {
+    console.error('Error adding moment:', error);
+    throw error;
+  }
+};
+
 export default api;
 
 
