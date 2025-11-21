@@ -45,15 +45,37 @@ const HomePage = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom>
-          Video Moments
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Browse and watch your video collection
-        </Typography>
-      </Box>
+    <Box sx={{ 
+      minHeight: '100vh',
+      backgroundColor: 'background.default',
+    }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3, md: 4 } }}>
+        <Box sx={{ 
+          mb: { xs: 2, sm: 3, md: 4 },
+          px: { xs: 1, sm: 2 },
+        }}>
+          <Typography 
+            variant="h3" 
+            component="h1" 
+            sx={{
+              fontWeight: 400,
+              fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' },
+              mb: 0.5,
+              color: 'text.primary',
+            }}
+          >
+            Video Moments
+          </Typography>
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            }}
+          >
+            Browse and watch your video collection
+          </Typography>
+        </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -82,7 +104,8 @@ const HomePage = () => {
           <VideoGrid videos={videos} onVideoClick={handleVideoClick} />
         </Box>
       )}
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

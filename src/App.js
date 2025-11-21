@@ -6,11 +6,36 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1976d2',
+      main: '#FF0000', // YouTube red
     },
     secondary: {
-      main: '#dc004e',
+      main: '#606060', // YouTube gray
     },
+    background: {
+      default: '#FFFFFF',
+      paper: '#FFFFFF',
+    },
+    text: {
+      primary: '#030303',
+      secondary: '#606060',
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h1: {
+      fontWeight: 400,
+    },
+    h3: {
+      fontWeight: 400,
+      fontSize: '1.5rem',
+    },
+    subtitle1: {
+      fontWeight: 500,
+      fontSize: '0.875rem',
+    },
+  },
+  shape: {
+    borderRadius: 8,
   },
 });
 

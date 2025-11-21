@@ -14,9 +14,26 @@ const VideoGrid = ({ videos, onVideoClick }) => {
   }
 
   return (
-    <Grid container spacing={3} sx={{ py: 3 }}>
+    <Grid 
+      container 
+      spacing={{ xs: 2, sm: 2, md: 3 }} 
+      sx={{ 
+        py: { xs: 2, sm: 3 },
+        px: { xs: 1, sm: 2 },
+      }}
+    >
       {videos.map((video) => (
-        <Grid item xs={12} sm={6} md={4} lg={3} key={video.id}>
+        <Grid 
+          item 
+          xs={12} 
+          sm={6} 
+          md={4} 
+          lg={3}
+          key={video.id}
+          sx={{
+            display: 'flex',
+          }}
+        >
           <VideoCard video={video} onClick={() => onVideoClick(video)} />
         </Grid>
       ))}
@@ -25,4 +42,5 @@ const VideoGrid = ({ videos, onVideoClick }) => {
 };
 
 export default VideoGrid;
+
 

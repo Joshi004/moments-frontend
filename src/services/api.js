@@ -33,5 +33,10 @@ export const getVideoStreamUrl = (videoId) => {
   return `${API_BASE_URL}/videos/${videoId}/stream`;
 };
 
+export const getThumbnailUrl = (videoId) => {
+  return `${API_BASE_URL}/videos/${videoId}/thumbnail`;
+};
+
 export default api;
+
 
