@@ -57,6 +57,28 @@ export const addMoment = async (videoId, moment) => {
   }
 };
 
+export const processAudio = async (videoId) => {
+  try {
+    console.log('processAudio API call with videoId:', videoId, 'URL:', `/videos/${videoId}/process-audio`);
+    const response = await api.post(`/videos/${videoId}/process-audio`);
+    return response.data;
+  } catch (error) {
+    console.error('Error processing audio:', error);
+    console.error('Error response:', error.response?.data);
+    throw error;
+  }
+};
+
+export const getProcessingStatus = async () => {
+  try {
+    const response = await api.get('/videos/processing-status');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching processing status:', error);
+    throw error;
+  }
+};
+
 export default api;
 
 

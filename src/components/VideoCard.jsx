@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardMedia, CardContent, Typography, Box, Skeleton } from '@mui/material';
-import { PlayCircleOutline } from '@mui/icons-material';
+import { Card, CardMedia, CardContent, Typography, Box, Skeleton, IconButton } from '@mui/material';
+import { PlayCircleOutline, VolumeOff } from '@mui/icons-material';
 import { getThumbnailUrl } from '../services/api';
 
-const VideoCard = ({ video, onClick }) => {
+const VideoCard = ({ video, onClick, onAudioIconClick }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
@@ -18,6 +18,13 @@ const VideoCard = ({ video, onClick }) => {
   const handleImageError = () => {
     setImageError(true);
     setImageLoaded(true);
+  };
+
+  const handleAudioIconClick = (e) => {
+    e.stopPropagation(); // Prevent card click
+    if (onAudioIconClick) {
+      onAudioIconClick(video);
+    }
   };
 
   return (
@@ -127,6 +134,27 @@ const VideoCard = ({ video, onClick }) => {
             }}
           />
         </Box>
+        {/* Missing audio icon */}
+        {video.has_audio === false && (
+          <IconButton
+            onClick={handleAudioIconClick}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              color: 'white',
+              padding: '4px',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              },
+              zIndex: 10,
+            }}
+            size="small"
+          >
+            <VolumeOff sx={{ fontSize: 20 }} />
+          </IconButton>
+        )}
       </Box>
       <CardContent
         sx={{

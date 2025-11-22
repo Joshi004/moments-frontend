@@ -2,7 +2,7 @@ import React from 'react';
 import { Grid, Box, Typography } from '@mui/material';
 import VideoCard from './VideoCard';
 
-const VideoGrid = ({ videos, onVideoClick }) => {
+const VideoGrid = ({ videos, onVideoClick, onAudioIconClick }) => {
   if (!videos || videos.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -34,7 +34,11 @@ const VideoGrid = ({ videos, onVideoClick }) => {
             display: 'flex',
           }}
         >
-          <VideoCard video={video} onClick={() => onVideoClick(video)} />
+          <VideoCard 
+            video={video} 
+            onClick={() => onVideoClick(video)} 
+            onAudioIconClick={onAudioIconClick}
+          />
         </Grid>
       ))}
     </Grid>
