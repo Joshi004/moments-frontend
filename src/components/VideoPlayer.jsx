@@ -227,61 +227,48 @@ const VideoPlayer = ({
     setCaptionsEnabled(!captionsEnabled);
   };
 
-  // Update caption text based on current time
+  // Update caption text based on current time using segments
   useEffect(() => {
-    if (!captionsEnabled || !transcript || !transcript.word_timestamps || transcript.word_timestamps.length === 0) {
+    if (!captionsEnabled || !transcript || !transcript.segment_timestamps || transcript.segment_timestamps.length === 0) {
       setCurrentCaptionText('');
       return;
     }
 
-    const words = transcript.word_timestamps;
-    const lookAhead = 2.5; // Show 2.5 seconds ahead
-    const lookBack = 0.5; // Show 0.5 seconds back
+    const segments = transcript.segment_timestamps;
     
-    // Find words that are currently being spoken or within the display window
-    const activeWords = words.filter(word => 
-      word.start <= currentTime + lookAhead && word.end >= currentTime - lookBack
-    );
-
-    if (activeWords.length === 0) {
-      setCurrentCaptionText('');
-      return;
-    }
-
-    // Find the word that's currently being spoken (or closest to current time)
-    let currentWordIndex = -1;
-    for (let i = 0; i < words.length; i++) {
-      if (words[i].start <= currentTime && words[i].end >= currentTime) {
-        currentWordIndex = i;
+    // Find the segment that contains the current time
+    // A segment is active if currentTime is between start (inclusive) and end (exclusive)
+    // For the last segment, we include the end time to handle edge cases
+    let activeSegment = null;
+    
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      const isLastSegment = i === segments.length - 1;
+      
+      // Check if current time falls within this segment's time range
+      if (currentTime >= segment.start && (isLastSegment ? currentTime <= segment.end : currentTime < segment.end)) {
+        activeSegment = segment;
         break;
       }
     }
-
-    // If no word is exactly at current time, find the next word
-    if (currentWordIndex === -1) {
-      for (let i = 0; i < words.length; i++) {
-        if (words[i].start > currentTime) {
-          currentWordIndex = i;
-          break;
-        }
+    
+    // If no active segment found and we're before the first segment, show nothing
+    // If we're after the last segment, show the last segment briefly, then clear
+    if (!activeSegment) {
+      // Check if we're past all segments
+      const lastSegment = segments[segments.length - 1];
+      if (currentTime >= lastSegment.end) {
+        // Past the end - clear captions
+        setCurrentCaptionText('');
+        return;
       }
-    }
-
-    if (currentWordIndex === -1) {
-      // Past the end of transcript
+      // Before first segment - show nothing
       setCurrentCaptionText('');
       return;
     }
-
-    // Build a segment around the current word
-    // Show 3-4 words before and 8-10 words after for better context
-    const segmentStart = Math.max(0, currentWordIndex - 3);
-    const segmentEnd = Math.min(words.length - 1, currentWordIndex + 10);
     
-    const segmentWords = words.slice(segmentStart, segmentEnd + 1);
-    const segmentText = segmentWords.map(w => w.word).join(' ');
-    
-    setCurrentCaptionText(segmentText);
+    // Display the active segment's text
+    setCurrentCaptionText(activeSegment.text || '');
   }, [currentTime, captionsEnabled, transcript]);
 
   useEffect(() => {
