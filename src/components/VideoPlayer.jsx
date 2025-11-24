@@ -6,12 +6,15 @@ import {
   Paper,
   Divider,
   Button,
+  Snackbar,
+  Alert,
 } from '@mui/material';
-import { Close, Add } from '@mui/icons-material';
+import { Close, Add, AutoAwesome } from '@mui/icons-material';
 import VideoControls from './VideoControls';
 import VideoCaptions from './VideoCaptions';
 import AddMomentDialog from './AddMomentDialog';
-import { getVideoStreamUrl, getMoments, addMoment, getTranscript } from '../services/api';
+import GenerateMomentsModal from './GenerateMomentsModal';
+import { getVideoStreamUrl, getMoments, addMoment, getTranscript, generateMoments, getGenerationStatus } from '../services/api';
 
 const VideoPlayer = ({
   video,
@@ -29,6 +32,11 @@ const VideoPlayer = ({
   const [isMuted, setIsMuted] = useState(false);
   const [moments, setMoments] = useState([]);
   const [isAddMomentDialogOpen, setIsAddMomentDialogOpen] = useState(false);
+  const [isGenerateMomentsModalOpen, setIsGenerateMomentsModalOpen] = useState(false);
+  const [isGeneratingMoments, setIsGeneratingMoments] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState(null);
+  const [generationPollInterval, setGenerationPollInterval] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [transcript, setTranscript] = useState(null);
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [currentCaptionText, setCurrentCaptionText] = useState('');
@@ -53,8 +61,25 @@ const VideoPlayer = ({
       // Reset captions when video changes
       setCaptionsEnabled(false);
       setCurrentCaptionText('');
+      // Reset generation state
+      setIsGeneratingMoments(false);
+      setGenerationStatus(null);
+      // Stop any existing polling
+      if (generationPollInterval) {
+        clearInterval(generationPollInterval);
+        setGenerationPollInterval(null);
+      }
     }
   }, [video, volume, isMuted]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (generationPollInterval) {
+        clearInterval(generationPollInterval);
+      }
+    };
+  }, [generationPollInterval]);
 
   const fetchMoments = async () => {
     if (!video) return;
@@ -87,6 +112,89 @@ const VideoPlayer = ({
     } catch (error) {
       throw error; // Re-throw to let dialog handle error display
     }
+  };
+
+  const handleGenerateMoments = async (config) => {
+    if (!video) return;
+    
+    try {
+      setIsGeneratingMoments(true);
+      setSnackbar({ open: false, message: '', severity: 'info' });
+      
+      // Start generation
+      await generateMoments(video.id, config);
+      
+      // Start polling for status
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await getGenerationStatus(video.id);
+          setGenerationStatus(status);
+          
+          if (status && status.status === 'completed') {
+            // Generation completed
+            clearInterval(pollInterval);
+            setGenerationPollInterval(null);
+            setIsGeneratingMoments(false);
+            setIsGenerateMomentsModalOpen(false);
+            
+            // Refresh moments
+            await fetchMoments();
+            
+            setSnackbar({
+              open: true,
+              message: 'Moments generated successfully!',
+              severity: 'success',
+            });
+          } else if (status && status.status === 'failed') {
+            // Generation failed
+            clearInterval(pollInterval);
+            setGenerationPollInterval(null);
+            setIsGeneratingMoments(false);
+            
+            setSnackbar({
+              open: true,
+              message: 'Moment generation failed. Please try again.',
+              severity: 'error',
+            });
+          }
+        } catch (error) {
+          console.error('Error polling generation status:', error);
+          // Continue polling on error
+        }
+      }, 2000); // Poll every 2 seconds
+      
+      setGenerationPollInterval(pollInterval);
+      
+      // Set timeout to stop polling after 5 minutes
+      setTimeout(() => {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          setGenerationPollInterval(null);
+          if (isGeneratingMoments) {
+            setIsGeneratingMoments(false);
+            setSnackbar({
+              open: true,
+              message: 'Generation timeout. Please check the status.',
+              severity: 'warning',
+            });
+          }
+        }
+      }, 5 * 60 * 1000); // 5 minutes
+      
+    } catch (error) {
+      console.error('Error generating moments:', error);
+      setIsGeneratingMoments(false);
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start moment generation. Please try again.';
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   useEffect(() => {
@@ -473,14 +581,24 @@ const VideoPlayer = ({
                 {video.filename}
               </Typography>
             </Box>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => setIsAddMomentDialogOpen(true)}
-              sx={{ ml: 2 }}
-            >
-              Add Moment
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={<AutoAwesome />}
+                onClick={() => setIsGenerateMomentsModalOpen(true)}
+                disabled={!video.has_transcript || isGeneratingMoments}
+                sx={{ ml: 2 }}
+              >
+                Generate Moments
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => setIsAddMomentDialogOpen(true)}
+              >
+                Add Moment
+              </Button>
+            </Box>
           </Box>
         </Box>
       </Box>
@@ -491,6 +609,25 @@ const VideoPlayer = ({
         onSave={handleAddMoment}
         videoDuration={duration}
       />
+
+      <GenerateMomentsModal
+        open={isGenerateMomentsModalOpen}
+        onClose={() => setIsGenerateMomentsModalOpen(false)}
+        onGenerate={handleGenerateMoments}
+        video={video}
+        isGenerating={isGeneratingMoments}
+      />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };

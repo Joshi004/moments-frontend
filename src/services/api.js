@@ -87,6 +87,26 @@ export const getTranscript = async (videoId) => {
   }
 };
 
+export const generateMoments = async (videoId, config) => {
+  try {
+    const response = await api.post(`/videos/${videoId}/generate-moments`, config);
+    return response.data;
+  } catch (error) {
+    console.error('Error generating moments:', error);
+    throw error;
+  }
+};
+
+export const getGenerationStatus = async (videoId) => {
+  try {
+    const response = await api.get(`/videos/${videoId}/generation-status`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching generation status:', error);
+    throw error;
+  }
+};
+
 export default api;
 
 
