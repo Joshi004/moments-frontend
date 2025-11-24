@@ -9,8 +9,9 @@ import {
 } from '@mui/material';
 import { Close, Add } from '@mui/icons-material';
 import VideoControls from './VideoControls';
+import VideoCaptions from './VideoCaptions';
 import AddMomentDialog from './AddMomentDialog';
-import { getVideoStreamUrl, getMoments, addMoment } from '../services/api';
+import { getVideoStreamUrl, getMoments, addMoment, getTranscript } from '../services/api';
 
 const VideoPlayer = ({
   video,
@@ -27,6 +28,10 @@ const VideoPlayer = ({
   const [isMuted, setIsMuted] = useState(false);
   const [moments, setMoments] = useState([]);
   const [isAddMomentDialogOpen, setIsAddMomentDialogOpen] = useState(false);
+  const [transcript, setTranscript] = useState(null);
+  const [captionsEnabled, setCaptionsEnabled] = useState(false);
+  const [currentCaptionText, setCurrentCaptionText] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const currentIndex = videos.findIndex((v) => v.id === video?.id);
   const hasPrevious = currentIndex > 0;
@@ -42,6 +47,11 @@ const VideoPlayer = ({
       }
       // Fetch moments when video changes
       fetchMoments();
+      // Fetch transcript when video changes
+      fetchTranscript();
+      // Reset captions when video changes
+      setCaptionsEnabled(false);
+      setCurrentCaptionText('');
     }
   }, [video, volume, isMuted]);
 
@@ -53,6 +63,17 @@ const VideoPlayer = ({
     } catch (error) {
       console.error('Error fetching moments:', error);
       setMoments([]);
+    }
+  };
+
+  const fetchTranscript = async () => {
+    if (!video) return;
+    try {
+      const transcriptData = await getTranscript(video.id);
+      setTranscript(transcriptData);
+    } catch (error) {
+      console.error('Error fetching transcript:', error);
+      setTranscript(null);
     }
   };
 
@@ -147,16 +168,121 @@ const VideoPlayer = ({
     const videoElement = videoRef.current;
     if (!videoElement) return;
 
-    if (videoElement.requestFullscreen) {
-      videoElement.requestFullscreen();
-    } else if (videoElement.webkitRequestFullscreen) {
-      videoElement.webkitRequestFullscreen();
-    } else if (videoElement.mozRequestFullScreen) {
-      videoElement.mozRequestFullScreen();
-    } else if (videoElement.msRequestFullscreen) {
-      videoElement.msRequestFullscreen();
+    const isCurrentlyFullscreen = document.fullscreenElement || 
+                                  document.webkitFullscreenElement || 
+                                  document.mozFullScreenElement || 
+                                  document.msFullscreenElement;
+
+    if (isCurrentlyFullscreen) {
+      // Exit fullscreen
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+      setIsFullscreen(false);
+    } else {
+      // Enter fullscreen
+      if (videoElement.requestFullscreen) {
+        videoElement.requestFullscreen();
+      } else if (videoElement.webkitRequestFullscreen) {
+        videoElement.webkitRequestFullscreen();
+      } else if (videoElement.mozRequestFullScreen) {
+        videoElement.mozRequestFullScreen();
+      } else if (videoElement.msRequestFullscreen) {
+        videoElement.msRequestFullscreen();
+      }
+      setIsFullscreen(true);
     }
   };
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = document.fullscreenElement || 
+                                    document.webkitFullscreenElement || 
+                                    document.mozFullScreenElement || 
+                                    document.msFullscreenElement;
+      setIsFullscreen(!!isCurrentlyFullscreen);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
+
+  const handleToggleCaptions = () => {
+    setCaptionsEnabled(!captionsEnabled);
+  };
+
+  // Update caption text based on current time
+  useEffect(() => {
+    if (!captionsEnabled || !transcript || !transcript.word_timestamps || transcript.word_timestamps.length === 0) {
+      setCurrentCaptionText('');
+      return;
+    }
+
+    const words = transcript.word_timestamps;
+    const lookAhead = 2.5; // Show 2.5 seconds ahead
+    const lookBack = 0.5; // Show 0.5 seconds back
+    
+    // Find words that are currently being spoken or within the display window
+    const activeWords = words.filter(word => 
+      word.start <= currentTime + lookAhead && word.end >= currentTime - lookBack
+    );
+
+    if (activeWords.length === 0) {
+      setCurrentCaptionText('');
+      return;
+    }
+
+    // Find the word that's currently being spoken (or closest to current time)
+    let currentWordIndex = -1;
+    for (let i = 0; i < words.length; i++) {
+      if (words[i].start <= currentTime && words[i].end >= currentTime) {
+        currentWordIndex = i;
+        break;
+      }
+    }
+
+    // If no word is exactly at current time, find the next word
+    if (currentWordIndex === -1) {
+      for (let i = 0; i < words.length; i++) {
+        if (words[i].start > currentTime) {
+          currentWordIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (currentWordIndex === -1) {
+      // Past the end of transcript
+      setCurrentCaptionText('');
+      return;
+    }
+
+    // Build a segment around the current word
+    // Show 3-4 words before and 8-10 words after for better context
+    const segmentStart = Math.max(0, currentWordIndex - 3);
+    const segmentEnd = Math.min(words.length - 1, currentWordIndex + 10);
+    
+    const segmentWords = words.slice(segmentStart, segmentEnd + 1);
+    const segmentText = segmentWords.map(w => w.word).join(' ');
+    
+    setCurrentCaptionText(segmentText);
+  }, [currentTime, captionsEnabled, transcript]);
 
   useEffect(() => {
     // Keyboard shortcuts
@@ -322,6 +448,16 @@ const VideoPlayer = ({
             hasPrevious={hasPrevious}
             hasNext={hasNext}
             moments={moments}
+            hasTranscript={!!transcript}
+            captionsEnabled={captionsEnabled}
+            onToggleCaptions={handleToggleCaptions}
+            isFullscreen={isFullscreen}
+          />
+
+          <VideoCaptions
+            text={currentCaptionText}
+            enabled={captionsEnabled}
+            isFullscreen={isFullscreen}
           />
         </Box>
 

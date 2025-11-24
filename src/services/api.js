@@ -77,6 +77,16 @@ export const processTranscript = async (videoId) => {
   }
 };
 
+export const getTranscript = async (videoId) => {
+  try {
+    const response = await api.get(`/videos/${videoId}/transcript`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching transcript:', error);
+    throw error;
+  }
+};
+
 export default api;
 
 
