@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Card, CardMedia, CardContent, Typography, Box, Skeleton, IconButton } from '@mui/material';
-import { PlayCircleOutline, VolumeOff } from '@mui/icons-material';
+import { PlayCircleOutline, VolumeOff, TextFields } from '@mui/icons-material';
 import { getThumbnailUrl } from '../services/api';
 
-const VideoCard = ({ video, onClick, onAudioIconClick }) => {
+const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
   const thumbnailUrl = video.thumbnail_url 
-    ? `http://localhost:8005${video.thumbnail_url}`
+    ? `http://localhost:7005${video.thumbnail_url}`
     : getThumbnailUrl(video.id);
 
   const handleImageLoad = () => {
@@ -24,6 +24,13 @@ const VideoCard = ({ video, onClick, onAudioIconClick }) => {
     e.stopPropagation(); // Prevent card click
     if (onAudioIconClick) {
       onAudioIconClick(video);
+    }
+  };
+
+  const handleTranscriptIconClick = (e) => {
+    e.stopPropagation(); // Prevent card click
+    if (onTranscriptIconClick) {
+      onTranscriptIconClick(video);
     }
   };
 
@@ -44,7 +51,8 @@ const VideoCard = ({ video, onClick, onAudioIconClick }) => {
         },
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
+        width: '320px',
+        height: 'auto',
         borderRadius: 2,
         overflow: 'hidden',
         backgroundColor: 'background.paper',
@@ -54,10 +62,11 @@ const VideoCard = ({ video, onClick, onAudioIconClick }) => {
       <Box
         sx={{
           position: 'relative',
-          width: '100%',
-          paddingTop: '56.25%', // 16:9 aspect ratio
+          width: '320px',
+          height: '180px',
           backgroundColor: 'grey.300',
           overflow: 'hidden',
+          flexShrink: 0,
         }}
       >
         {!imageLoaded && (
@@ -86,6 +95,7 @@ const VideoCard = ({ video, onClick, onAudioIconClick }) => {
               width: '100%',
               height: '100%',
               objectFit: 'cover',
+              objectPosition: 'center',
               display: imageLoaded ? 'block' : 'none',
             }}
           />
@@ -155,6 +165,27 @@ const VideoCard = ({ video, onClick, onAudioIconClick }) => {
             <VolumeOff sx={{ fontSize: 20 }} />
           </IconButton>
         )}
+        {/* Missing transcript icon */}
+        {video.has_audio === true && video.has_transcript === false && (
+          <IconButton
+            onClick={handleTranscriptIconClick}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              color: 'white',
+              padding: '4px',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              },
+              zIndex: 10,
+            }}
+            size="small"
+          >
+            <TextFields sx={{ fontSize: 20 }} />
+          </IconButton>
+        )}
       </Box>
       <CardContent
         sx={{
@@ -163,6 +194,7 @@ const VideoCard = ({ video, onClick, onAudioIconClick }) => {
           flexDirection: 'column',
           justifyContent: 'flex-start',
           padding: 1.5,
+          minHeight: 0,
           '&:last-child': {
             paddingBottom: 1.5,
           },

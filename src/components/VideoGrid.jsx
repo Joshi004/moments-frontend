@@ -2,7 +2,7 @@ import React from 'react';
 import { Grid, Box, Typography } from '@mui/material';
 import VideoCard from './VideoCard';
 
-const VideoGrid = ({ videos, onVideoClick, onAudioIconClick }) => {
+const VideoGrid = ({ videos, onVideoClick, onAudioIconClick, onTranscriptIconClick }) => {
   if (!videos || videos.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -14,34 +14,26 @@ const VideoGrid = ({ videos, onVideoClick, onAudioIconClick }) => {
   }
 
   return (
-    <Grid 
-      container 
-      spacing={{ xs: 2, sm: 2, md: 3 }} 
-      sx={{ 
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 2,
         py: { xs: 2, sm: 3 },
         px: { xs: 1, sm: 2 },
+        justifyContent: 'flex-start',
       }}
     >
       {videos.map((video) => (
-        <Grid 
-          item 
-          xs={12} 
-          sm={6} 
-          md={4} 
-          lg={3}
+        <VideoCard 
           key={video.id}
-          sx={{
-            display: 'flex',
-          }}
-        >
-          <VideoCard 
-            video={video} 
-            onClick={() => onVideoClick(video)} 
-            onAudioIconClick={onAudioIconClick}
-          />
-        </Grid>
+          video={video} 
+          onClick={() => onVideoClick(video)} 
+          onAudioIconClick={onAudioIconClick}
+          onTranscriptIconClick={onTranscriptIconClick}
+        />
       ))}
-    </Grid>
+    </Box>
   );
 };
 

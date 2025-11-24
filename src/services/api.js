@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8005/api';
+const API_BASE_URL = 'http://localhost:7005/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -59,22 +59,20 @@ export const addMoment = async (videoId, moment) => {
 
 export const processAudio = async (videoId) => {
   try {
-    console.log('processAudio API call with videoId:', videoId, 'URL:', `/videos/${videoId}/process-audio`);
     const response = await api.post(`/videos/${videoId}/process-audio`);
     return response.data;
   } catch (error) {
     console.error('Error processing audio:', error);
-    console.error('Error response:', error.response?.data);
     throw error;
   }
 };
 
-export const getProcessingStatus = async () => {
+export const processTranscript = async (videoId) => {
   try {
-    const response = await api.get('/videos/processing-status');
+    const response = await api.post(`/videos/${videoId}/process-transcript`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching processing status:', error);
+    console.error('Error processing transcript:', error);
     throw error;
   }
 };

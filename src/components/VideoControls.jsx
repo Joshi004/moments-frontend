@@ -12,8 +12,11 @@ import {
   VolumeUp,
   VolumeOff,
   Fullscreen,
+  FullscreenExit,
   SkipPrevious,
   SkipNext,
+  ClosedCaption,
+  ClosedCaptionOff,
 } from '@mui/icons-material';
 
 const VideoControls = ({
@@ -26,12 +29,16 @@ const VideoControls = ({
   onVolumeChange,
   onToggleMute,
   onFullscreen,
+  isFullscreen = false,
   onPrevious,
   onNext,
   hasPrevious,
   hasNext,
   isMuted,
   moments = [],
+  hasTranscript = false,
+  captionsEnabled = false,
+  onToggleCaptions,
 }) => {
   const [hoveredMoment, setHoveredMoment] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, relativeX: 0 });
@@ -287,8 +294,29 @@ const VideoControls = ({
         </Box>
 
         {/* Fullscreen Button */}
-        <IconButton onClick={onFullscreen} sx={{ color: 'white' }} size="small">
-          <Fullscreen />
+        <IconButton 
+          onClick={onFullscreen} 
+          sx={{ color: 'white' }} 
+          size="small"
+          title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+        >
+          {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
+        </IconButton>
+
+        {/* Caption Toggle Button */}
+        <IconButton
+          onClick={onToggleCaptions}
+          disabled={!hasTranscript}
+          sx={{
+            color: 'white',
+            '&.Mui-disabled': {
+              color: 'rgba(255, 255, 255, 0.3)',
+            },
+          }}
+          size="small"
+          title={hasTranscript ? (captionsEnabled ? 'Turn off captions' : 'Turn on captions') : 'Captions unavailable'}
+        >
+          {captionsEnabled ? <ClosedCaption /> : <ClosedCaptionOff />}
         </IconButton>
       </Stack>
     </Box>
