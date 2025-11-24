@@ -21,6 +21,7 @@ const VideoPlayer = ({
   onNext,
 }) => {
   const videoRef = useRef(null);
+  const containerRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -165,8 +166,8 @@ const VideoPlayer = ({
   };
 
   const handleFullscreen = () => {
-    const videoElement = videoRef.current;
-    if (!videoElement) return;
+    const containerElement = containerRef.current;
+    if (!containerElement) return;
 
     const isCurrentlyFullscreen = document.fullscreenElement || 
                                   document.webkitFullscreenElement || 
@@ -186,15 +187,15 @@ const VideoPlayer = ({
       }
       setIsFullscreen(false);
     } else {
-      // Enter fullscreen
-      if (videoElement.requestFullscreen) {
-        videoElement.requestFullscreen();
-      } else if (videoElement.webkitRequestFullscreen) {
-        videoElement.webkitRequestFullscreen();
-      } else if (videoElement.mozRequestFullScreen) {
-        videoElement.mozRequestFullScreen();
-      } else if (videoElement.msRequestFullscreen) {
-        videoElement.msRequestFullscreen();
+      // Enter fullscreen on container (includes video, controls, and captions)
+      if (containerElement.requestFullscreen) {
+        containerElement.requestFullscreen();
+      } else if (containerElement.webkitRequestFullscreen) {
+        containerElement.webkitRequestFullscreen();
+      } else if (containerElement.mozRequestFullScreen) {
+        containerElement.mozRequestFullScreen();
+      } else if (containerElement.msRequestFullscreen) {
+        containerElement.msRequestFullscreen();
       }
       setIsFullscreen(true);
     }
@@ -203,11 +204,19 @@ const VideoPlayer = ({
   // Listen for fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
+      const containerElement = containerRef.current;
       const isCurrentlyFullscreen = document.fullscreenElement || 
                                     document.webkitFullscreenElement || 
                                     document.mozFullScreenElement || 
                                     document.msFullscreenElement;
-      setIsFullscreen(!!isCurrentlyFullscreen);
+      // Check if our container is the fullscreen element
+      const isContainerFullscreen = containerElement && (
+        document.fullscreenElement === containerElement ||
+        document.webkitFullscreenElement === containerElement ||
+        document.mozFullScreenElement === containerElement ||
+        document.msFullscreenElement === containerElement
+      );
+      setIsFullscreen(!!isContainerFullscreen);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -391,11 +400,17 @@ const VideoPlayer = ({
         </IconButton>
 
         <Box
+          ref={containerRef}
           sx={{
             position: 'relative',
             width: '100%',
-            maxHeight: '60vh',
+            maxHeight: isFullscreen ? '100vh' : '60vh',
+            height: isFullscreen ? '100vh' : 'auto',
             backgroundColor: 'black',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
           <video
@@ -404,8 +419,10 @@ const VideoPlayer = ({
             controls={false}
             style={{
               width: '100%',
-              maxHeight: '60vh',
+              maxHeight: isFullscreen ? '100vh' : '60vh',
+              height: isFullscreen ? '100%' : 'auto',
               display: 'block',
+              objectFit: isFullscreen ? 'contain' : 'contain',
             }}
             onLoadedMetadata={() => {
               if (videoRef.current && videoRef.current.duration) {
