@@ -41,13 +41,19 @@ const VideoControls = ({
   onToggleCaptions,
 }) => {
   const [hoveredMoment, setHoveredMoment] = useState(null);
+  const [hoverTime, setHoverTime] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, relativeX: 0 });
   const seekBarRef = useRef(null);
 
   const formatTime = (seconds) => {
     if (isNaN(seconds)) return '0:00';
-    const mins = Math.floor(seconds / 60);
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
+    
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -65,29 +71,37 @@ const VideoControls = ({
     return percent * duration;
   };
 
-  // Handle mouse move to detect which moment is hovered
+  // Handle mouse move to detect which moment is hovered and calculate hover time
   const handleMouseMove = (e) => {
-    if (!seekBarRef.current || !duration || duration === 0 || moments.length === 0) {
+    if (!seekBarRef.current || !duration || duration === 0) {
       setHoveredMoment(null);
+      setHoverTime(null);
       return;
     }
 
     const rect = seekBarRef.current.getBoundingClientRect();
     const relativeX = e.clientX - rect.left;
-    const hoverTime = getTimeFromPosition(e.clientX);
+    const calculatedHoverTime = getTimeFromPosition(e.clientX);
 
-    // Find moment that contains hoverTime
-    const moment = moments.find(m => 
-      hoverTime >= m.start_time && hoverTime <= m.end_time
-    );
-
-    setHoveredMoment(moment);
+    // Always set hover time
+    setHoverTime(calculatedHoverTime);
     setMousePosition({ x: e.clientX, relativeX });
+
+    // Find moment that contains hoverTime (if moments exist)
+    if (moments.length > 0) {
+      const moment = moments.find(m => 
+        calculatedHoverTime >= m.start_time && calculatedHoverTime <= m.end_time
+      );
+      setHoveredMoment(moment);
+    } else {
+      setHoveredMoment(null);
+    }
   };
 
-  // Handle mouse leave to clear hovered moment
+  // Handle mouse leave to clear hovered moment and time
   const handleMouseLeave = () => {
     setHoveredMoment(null);
+    setHoverTime(null);
   };
 
   return (
@@ -111,8 +125,8 @@ const VideoControls = ({
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Tooltip for hovered moment */}
-        {hoveredMoment && seekBarRef.current && (
+        {/* Tooltip - Show moment tooltip if hovering over moment, otherwise show time tooltip */}
+        {seekBarRef.current && (hoveredMoment || hoverTime !== null) && (
           <Box
             sx={{
               position: 'absolute',
@@ -128,15 +142,16 @@ const VideoControls = ({
               sx={{
                 backgroundColor: 'rgba(0, 0, 0, 0.9)',
                 color: 'white',
-                padding: '6px 12px',
+                padding: hoveredMoment ? '6px 12px' : '4px 8px',
                 borderRadius: '4px',
-                fontSize: '0.875rem',
+                fontSize: hoveredMoment ? '0.875rem' : '0.75rem',
                 whiteSpace: 'nowrap',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                 transition: 'opacity 0.15s ease-in-out, transform 0.15s ease-in-out',
+                fontFamily: hoveredMoment ? 'inherit' : 'monospace',
               }}
             >
-              {hoveredMoment.title}
+              {hoveredMoment ? hoveredMoment.title : formatTime(hoverTime)}
             </Box>
             {/* Tooltip arrow */}
             <Box

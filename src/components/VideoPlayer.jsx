@@ -14,6 +14,7 @@ import VideoControls from './VideoControls';
 import VideoCaptions from './VideoCaptions';
 import AddMomentDialog from './AddMomentDialog';
 import GenerateMomentsModal from './GenerateMomentsModal';
+import MomentsList from './MomentsList';
 import { getVideoStreamUrl, getMoments, addMoment, getTranscript, generateMoments, getGenerationStatus } from '../services/api';
 
 const VideoPlayer = ({
@@ -393,6 +394,11 @@ const VideoPlayer = ({
     const handleKeyPress = (e) => {
       if (!video) return;
 
+      // Disable keyboard shortcuts when modals are open
+      if (isAddMomentDialogOpen || isGenerateMomentsModalOpen) {
+        return;
+      }
+
       const videoElement = videoRef.current;
       if (!videoElement) return;
 
@@ -431,7 +437,7 @@ const VideoPlayer = ({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [video, volume, duration]);
+  }, [video, volume, duration, isAddMomentDialogOpen, isGenerateMomentsModalOpen]);
 
   const handleSeek = (value) => {
     const videoElement = videoRef.current;
@@ -473,6 +479,16 @@ const VideoPlayer = ({
   const handleNext = () => {
     if (hasNext && onNext) {
       onNext(videos[currentIndex + 1]);
+    }
+  };
+
+  const handleMomentClick = (startTime) => {
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      videoElement.currentTime = startTime;
+      setCurrentTime(startTime);
+      // Optionally auto-play when clicking on a moment
+      // videoElement.play();
     }
   };
 
@@ -601,6 +617,17 @@ const VideoPlayer = ({
             </Box>
           </Box>
         </Box>
+
+        {/* Moments List */}
+        <MomentsList
+          moments={moments}
+          currentTime={currentTime}
+          duration={duration}
+          onMomentClick={handleMomentClick}
+          onAddMomentClick={() => setIsAddMomentDialogOpen(true)}
+          onGenerateMomentsClick={() => setIsGenerateMomentsModalOpen(true)}
+          hasTranscript={!!video.has_transcript}
+        />
       </Box>
 
       <AddMomentDialog
