@@ -14,8 +14,9 @@ import VideoControls from './VideoControls';
 import VideoCaptions from './VideoCaptions';
 import AddMomentDialog from './AddMomentDialog';
 import GenerateMomentsModal from './GenerateMomentsModal';
+import RefineMomentModal from './RefineMomentModal';
 import MomentsList from './MomentsList';
-import { getVideoStreamUrl, getMoments, addMoment, getTranscript, generateMoments, getGenerationStatus } from '../services/api';
+import { getVideoStreamUrl, getMoments, addMoment, getTranscript, generateMoments, getGenerationStatus, refineMoment, getRefinementStatus } from '../services/api';
 
 const VideoPlayer = ({
   video,
@@ -42,6 +43,11 @@ const VideoPlayer = ({
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [currentCaptionText, setCurrentCaptionText] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isRefineMomentModalOpen, setIsRefineMomentModalOpen] = useState(false);
+  const [momentToRefine, setMomentToRefine] = useState(null);
+  const [isRefiningMoment, setIsRefiningMoment] = useState(false);
+  const [refinementStatus, setRefinementStatus] = useState(null);
+  const [refinementPollInterval, setRefinementPollInterval] = useState(null);
 
   const currentIndex = videos.findIndex((v) => v.id === video?.id);
   const hasPrevious = currentIndex > 0;
@@ -65,10 +71,19 @@ const VideoPlayer = ({
       // Reset generation state
       setIsGeneratingMoments(false);
       setGenerationStatus(null);
+      // Reset refinement state
+      setIsRefiningMoment(false);
+      setRefinementStatus(null);
+      setMomentToRefine(null);
+      setIsRefineMomentModalOpen(false);
       // Stop any existing polling
       if (generationPollInterval) {
         clearInterval(generationPollInterval);
         setGenerationPollInterval(null);
+      }
+      if (refinementPollInterval) {
+        clearInterval(refinementPollInterval);
+        setRefinementPollInterval(null);
       }
     }
   }, [video, volume, isMuted]);
@@ -79,8 +94,11 @@ const VideoPlayer = ({
       if (generationPollInterval) {
         clearInterval(generationPollInterval);
       }
+      if (refinementPollInterval) {
+        clearInterval(refinementPollInterval);
+      }
     };
-  }, [generationPollInterval]);
+  }, [generationPollInterval, refinementPollInterval]);
 
   const fetchMoments = async () => {
     if (!video) return;
@@ -395,7 +413,7 @@ const VideoPlayer = ({
       if (!video) return;
 
       // Disable keyboard shortcuts when modals are open
-      if (isAddMomentDialogOpen || isGenerateMomentsModalOpen) {
+      if (isAddMomentDialogOpen || isGenerateMomentsModalOpen || isRefineMomentModalOpen) {
         return;
       }
 
@@ -437,7 +455,7 @@ const VideoPlayer = ({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [video, volume, duration, isAddMomentDialogOpen, isGenerateMomentsModalOpen]);
+  }, [video, volume, duration, isAddMomentDialogOpen, isGenerateMomentsModalOpen, isRefineMomentModalOpen]);
 
   const handleSeek = (value) => {
     const videoElement = videoRef.current;
@@ -489,6 +507,91 @@ const VideoPlayer = ({
       setCurrentTime(startTime);
       // Optionally auto-play when clicking on a moment
       // videoElement.play();
+    }
+  };
+
+  const handleRefineClick = (moment) => {
+    setMomentToRefine(moment);
+    setIsRefineMomentModalOpen(true);
+  };
+
+  const handleRefineMoment = async (config) => {
+    if (!video || !momentToRefine) return;
+    
+    try {
+      setIsRefiningMoment(true);
+      setSnackbar({ open: false, message: '', severity: 'info' });
+      
+      // Start refinement
+      await refineMoment(video.id, momentToRefine.id, config);
+      
+      // Start polling for status
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await getRefinementStatus(video.id, momentToRefine.id);
+          setRefinementStatus(status);
+          
+          if (status && status.status === 'completed') {
+            // Refinement completed
+            clearInterval(pollInterval);
+            setRefinementPollInterval(null);
+            setIsRefiningMoment(false);
+            setIsRefineMomentModalOpen(false);
+            setMomentToRefine(null);
+            
+            // Refresh moments
+            await fetchMoments();
+            
+            setSnackbar({
+              open: true,
+              message: 'Moment refined successfully!',
+              severity: 'success',
+            });
+          } else if (status && status.status === 'failed') {
+            // Refinement failed
+            clearInterval(pollInterval);
+            setRefinementPollInterval(null);
+            setIsRefiningMoment(false);
+            
+            setSnackbar({
+              open: true,
+              message: 'Moment refinement failed. Please try again.',
+              severity: 'error',
+            });
+          }
+        } catch (error) {
+          console.error('Error polling refinement status:', error);
+          // Continue polling on error
+        }
+      }, 2000); // Poll every 2 seconds
+      
+      setRefinementPollInterval(pollInterval);
+      
+      // Set timeout to stop polling after 5 minutes
+      setTimeout(() => {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          setRefinementPollInterval(null);
+          if (isRefiningMoment) {
+            setIsRefiningMoment(false);
+            setSnackbar({
+              open: true,
+              message: 'Refinement timeout. Please check the status.',
+              severity: 'warning',
+            });
+          }
+        }
+      }, 5 * 60 * 1000); // 5 minutes
+      
+    } catch (error) {
+      console.error('Error refining moment:', error);
+      setIsRefiningMoment(false);
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start moment refinement. Please try again.';
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
     }
   };
 
@@ -627,6 +730,7 @@ const VideoPlayer = ({
           onAddMomentClick={() => setIsAddMomentDialogOpen(true)}
           onGenerateMomentsClick={() => setIsGenerateMomentsModalOpen(true)}
           hasTranscript={!!video.has_transcript}
+          onRefineClick={handleRefineClick}
         />
       </Box>
 
@@ -643,6 +747,19 @@ const VideoPlayer = ({
         onGenerate={handleGenerateMoments}
         video={video}
         isGenerating={isGeneratingMoments}
+      />
+
+      <RefineMomentModal
+        open={isRefineMomentModalOpen}
+        onClose={() => {
+          if (!isRefiningMoment) {
+            setIsRefineMomentModalOpen(false);
+            setMomentToRefine(null);
+          }
+        }}
+        onRefine={handleRefineMoment}
+        moment={momentToRefine}
+        isRefining={isRefiningMoment}
       />
 
       <Snackbar

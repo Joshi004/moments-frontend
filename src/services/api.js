@@ -107,6 +107,26 @@ export const getGenerationStatus = async (videoId) => {
   }
 };
 
+export const refineMoment = async (videoId, momentId, config) => {
+  try {
+    const response = await api.post(`/videos/${videoId}/moments/${momentId}/refine`, config);
+    return response.data;
+  } catch (error) {
+    console.error('Error refining moment:', error);
+    throw error;
+  }
+};
+
+export const getRefinementStatus = async (videoId, momentId) => {
+  try {
+    const response = await api.get(`/videos/${videoId}/refinement-status/${momentId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching refinement status:', error);
+    throw error;
+  }
+};
+
 export default api;
 
 
