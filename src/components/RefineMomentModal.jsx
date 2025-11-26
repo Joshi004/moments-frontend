@@ -17,13 +17,16 @@ import {
 } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 
-const DEFAULT_PROMPT = `Analyze the word-level transcript and identify the precise start and end timestamps for this moment. The current timestamps may be slightly off. Find the exact point where this topic/segment naturally begins and ends.
+const DEFAULT_PROMPT = `Before refining the timestamps, let's define what a moment is: A moment is a segment of a video (with its corresponding transcript) that represents something engaging, meaningful, or valuable to the viewer. A moment should be a complete, coherent thought or concept that makes sense on its own.
+
+Now, analyze the word-level transcript and identify the precise start and end timestamps for this moment. The current timestamps may be slightly off. Find the exact point where this topic/segment naturally begins and ends.
 
 Guidelines:
-- Start the moment at the first word that introduces the topic
-- End the moment at the last word that concludes the thought
+- Start the moment at the first word that introduces the topic or begins the engaging segment
+- End the moment at the last word that concludes the thought or completes the concept
 - Be precise with word boundaries
-- Ensure the moment captures complete sentences or phrases`;
+- Ensure the moment captures complete sentences or phrases
+- The refined moment should represent a coherent, engaging segment that makes complete sense on its own`;
 
 const formatTime = (seconds) => {
   if (isNaN(seconds)) return '0:00';

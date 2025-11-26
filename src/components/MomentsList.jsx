@@ -32,6 +32,63 @@ const formatDuration = (startTime, endTime) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
+const ModelNameChip = ({ modelName, prompt }) => {
+  const displayName = modelName || 'Unknown Model';
+  const hasPrompt = prompt && prompt.trim().length > 0;
+  
+  const tooltipContent = hasPrompt ? (
+    <Box
+      sx={{
+        maxWidth: '500px',
+        maxHeight: '400px',
+        overflow: 'auto',
+        p: 1,
+      }}
+    >
+      <Typography
+        variant="caption"
+        component="pre"
+        sx={{
+          fontFamily: 'monospace',
+          fontSize: '0.75rem',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          margin: 0,
+        }}
+      >
+        {prompt}
+      </Typography>
+    </Box>
+  ) : (
+    <Typography variant="caption">Prompt not available</Typography>
+  );
+
+  return (
+    <Tooltip
+      title={tooltipContent}
+      arrow
+      placement="top"
+      enterDelay={300}
+      leaveDelay={100}
+    >
+      <Chip
+        label={displayName}
+        size="small"
+        variant="outlined"
+        sx={{
+          fontSize: '0.7rem',
+          height: '20px',
+          cursor: hasPrompt ? 'help' : 'default',
+          opacity: 0.8,
+          '&:hover': {
+            opacity: 1,
+          },
+        }}
+      />
+    </Tooltip>
+  );
+};
+
 const MomentCard = ({ moment, isActive, onClick, onHover, onLeave, onRefineClick, refinedMoments = [], hasTranscript }) => {
   const theme = useTheme();
   const cardRef = useRef(null);
@@ -134,6 +191,8 @@ const MomentCard = ({ moment, isActive, onClick, onHover, onLeave, onRefineClick
                 >
                   Duration: {formatDuration(moment.start_time, moment.end_time)}
                 </Typography>
+                
+                <ModelNameChip modelName={moment.model_name} prompt={moment.prompt} />
               </Box>
             </Box>
             
@@ -245,6 +304,7 @@ const RefinedMomentCard = ({ moment, isActive, onClick, theme }) => {
               >
                 Duration: {formatDuration(moment.start_time, moment.end_time)}
               </Typography>
+              <ModelNameChip modelName={moment.model_name} prompt={moment.prompt} />
             </Box>
           </Box>
           <PlayArrow sx={{ fontSize: '1.2rem', opacity: 0.5 }} />
