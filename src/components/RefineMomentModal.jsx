@@ -14,6 +14,10 @@ import {
   AccordionSummary,
   AccordionDetails,
   Chip,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 
@@ -44,6 +48,8 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
   const [userPrompt, setUserPrompt] = useState(DEFAULT_PROMPT);
   const [leftPadding, setLeftPadding] = useState(30);
   const [rightPadding, setRightPadding] = useState(30);
+  const [model, setModel] = useState('minimax');
+  const [temperature, setTemperature] = useState(0.7);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
 
@@ -53,6 +59,8 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
       setUserPrompt(DEFAULT_PROMPT);
       setLeftPadding(30);
       setRightPadding(30);
+      setModel('minimax');
+      setTemperature(0.7);
       setErrors({});
       setSubmitError('');
     }
@@ -78,6 +86,17 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
       newErrors.rightPadding = 'Right padding must be >= 0';
     }
 
+    // Validate temperature
+    const temp = parseFloat(temperature);
+    if (isNaN(temp) || temp < 0 || temp > 2) {
+      newErrors.temperature = 'Temperature must be between 0.0 and 2.0';
+    }
+
+    // Validate model
+    if (!model || (model !== 'minimax' && model !== 'qwen')) {
+      newErrors.model = 'Please select a valid model';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -93,6 +112,8 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
       user_prompt: userPrompt.trim(),
       left_padding: parseFloat(leftPadding),
       right_padding: parseFloat(rightPadding),
+      model: model,
+      temperature: parseFloat(temperature),
     };
 
     onRefine(config);
@@ -103,6 +124,8 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
       setUserPrompt(DEFAULT_PROMPT);
       setLeftPadding(30);
       setRightPadding(30);
+      setModel('minimax');
+      setTemperature(0.7);
       setErrors({});
       setSubmitError('');
       onClose();
@@ -209,6 +232,41 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
                 helperText={errors.rightPadding || 'Seconds after moment end'}
                 disabled={isRefining}
                 inputProps={{ min: 0, step: 1 }}
+              />
+            </Box>
+          </Box>
+
+          {/* Model and Temperature Controls */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>
+              AI Model Configuration
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 1 }}>
+              <FormControl fullWidth error={!!errors.model} disabled={isRefining}>
+                <InputLabel>Model</InputLabel>
+                <Select
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  label="Model"
+                >
+                  <MenuItem value="minimax">MiniMax</MenuItem>
+                  <MenuItem value="qwen">Qwen</MenuItem>
+                </Select>
+                {errors.model && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                    {errors.model}
+                  </Typography>
+                )}
+              </FormControl>
+              <TextField
+                label="Temperature"
+                type="number"
+                value={temperature}
+                onChange={(e) => setTemperature(e.target.value)}
+                error={!!errors.temperature}
+                helperText={errors.temperature || 'Controls randomness (0.0-2.0)'}
+                disabled={isRefining}
+                inputProps={{ min: 0, max: 2, step: 0.1 }}
               />
             </Box>
           </Box>
