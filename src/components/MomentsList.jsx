@@ -12,6 +12,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { PlayArrow, Add, AutoAwesome, Tune, ExpandMore, ExpandLess } from '@mui/icons-material';
+import MomentConfigDisplay from './MomentConfigDisplay';
 
 const formatTime = (seconds) => {
   if (isNaN(seconds)) return '0:00';
@@ -32,8 +33,24 @@ const formatDuration = (startTime, endTime) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const ModelNameChip = ({ modelName, prompt }) => {
-  const displayName = modelName || 'Unknown Model';
+const ModelNameChip = ({ modelName, generationConfig }) => {
+  // Use model from generation_config if available, fallback to model_name
+  const modelFromConfig = generationConfig?.model;
+  const displayModel = modelFromConfig || modelName || 'Unknown Model';
+  
+  // Get model display name and color
+  const getModelDisplay = () => {
+    const modelLower = displayModel.toLowerCase();
+    if (modelLower === 'minimax') {
+      return { name: 'MiniMax', color: 'primary' };
+    } else if (modelLower === 'qwen') {
+      return { name: 'Qwen', color: 'success' };
+    }
+    return { name: displayModel, color: 'default' };
+  };
+
+  const modelDisplay = getModelDisplay();
+  const prompt = generationConfig?.user_prompt || generationConfig?.complete_prompt;
   const hasPrompt = prompt && prompt.trim().length > 0;
   
   const tooltipContent = hasPrompt ? (
@@ -72,8 +89,9 @@ const ModelNameChip = ({ modelName, prompt }) => {
       leaveDelay={100}
     >
       <Chip
-        label={displayName}
+        label={modelDisplay.name}
         size="small"
+        color={modelDisplay.color}
         variant="outlined"
         sx={{
           fontSize: '0.7rem',
@@ -192,7 +210,7 @@ const MomentCard = ({ moment, isActive, onClick, onHover, onLeave, onRefineClick
                   Duration: {formatDuration(moment.start_time, moment.end_time)}
                 </Typography>
                 
-                <ModelNameChip modelName={moment.model_name} prompt={moment.prompt} />
+                <ModelNameChip modelName={moment.model_name} generationConfig={moment.generation_config} />
               </Box>
             </Box>
             
@@ -229,6 +247,13 @@ const MomentCard = ({ moment, isActive, onClick, onHover, onLeave, onRefineClick
               <PlayArrow sx={{ opacity: isActive ? 1 : 0.5 }} />
             </Box>
           </Box>
+          
+          {/* Configuration Display */}
+          {moment.generation_config && (
+            <Box sx={{ mt: 1 }}>
+              <MomentConfigDisplay generationConfig={moment.generation_config} />
+            </Box>
+          )}
         </CardContent>
       </Card>
 
@@ -304,11 +329,18 @@ const RefinedMomentCard = ({ moment, isActive, onClick, theme }) => {
               >
                 Duration: {formatDuration(moment.start_time, moment.end_time)}
               </Typography>
-              <ModelNameChip modelName={moment.model_name} prompt={moment.prompt} />
+              <ModelNameChip modelName={moment.model_name} generationConfig={moment.generation_config} />
             </Box>
           </Box>
           <PlayArrow sx={{ fontSize: '1.2rem', opacity: 0.5 }} />
         </Box>
+        
+        {/* Configuration Display */}
+        {moment.generation_config && (
+          <Box sx={{ px: 0, pb: 0, pt: 1 }}>
+            <MomentConfigDisplay generationConfig={moment.generation_config} />
+          </Box>
+        )}
       </CardContent>
     </Card>
   );
