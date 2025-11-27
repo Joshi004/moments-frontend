@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Card, CardMedia, CardContent, Typography, Box, Skeleton, IconButton } from '@mui/material';
 import { PlayCircleOutline, VolumeOff, TextFields } from '@mui/icons-material';
-import { getThumbnailUrl } from '../services/api';
+import { getThumbnailUrl, getBackendBaseUrl } from '../services/api';
 
 const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
   const thumbnailUrl = video.thumbnail_url 
-    ? `http://localhost:7005${video.thumbnail_url}`
+    ? `${getBackendBaseUrl()}${video.thumbnail_url}`
     : getThumbnailUrl(video.id);
 
   const handleImageLoad = () => {

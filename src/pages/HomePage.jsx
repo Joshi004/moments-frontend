@@ -28,7 +28,7 @@ const HomePage = () => {
       setVideos(videosData);
     } catch (err) {
       console.error('Error fetching videos:', err);
-      const errorMessage = err.response?.data?.detail || err.message || 'Failed to load videos. Please make sure the backend server is running on port 8005.';
+      const errorMessage = err.response?.data?.detail || err.message || 'Failed to load videos. Please make sure the backend server is running.';
       setError(errorMessage);
       setSnackbar({
         open: true,

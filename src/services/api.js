@@ -1,13 +1,62 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:7005/api';
+// Get backend base URL from environment variables
+// Priority: REACT_APP_API_URL > REACT_APP_BACKEND_PORT > window.REACT_APP_BACKEND_PORT > default
+// Note: window.REACT_APP_BACKEND_PORT can be set at runtime via public/index.html or window object
+const getApiBaseUrl = () => {
+  if (process.env.REACT_APP_API_URL) {
+    console.log('[API] Using REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+    return process.env.REACT_APP_API_URL;
+  }
+  // Check process.env first (set at build/start time)
+  if (process.env.REACT_APP_BACKEND_PORT) {
+    const url = `http://localhost:${process.env.REACT_APP_BACKEND_PORT}/api`;
+    console.log('[API] Using REACT_APP_BACKEND_PORT:', process.env.REACT_APP_BACKEND_PORT, '->', url);
+    return url;
+  }
+  // Check window object (can be set dynamically)
+  if (typeof window !== 'undefined' && window.REACT_APP_BACKEND_PORT) {
+    const url = `http://localhost:${window.REACT_APP_BACKEND_PORT}/api`;
+    console.log('[API] Using window.REACT_APP_BACKEND_PORT:', window.REACT_APP_BACKEND_PORT, '->', url);
+    return url;
+  }
+  console.warn('[API] No backend port configured, using default: 7005');
+  return 'http://localhost:7005/api';
+};
 
+// API_BASE_URL will be computed dynamically on each request via interceptor
+
+// Create axios instance with dynamic baseURL
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Override axios request interceptor to use dynamic baseURL
+api.interceptors.request.use((config) => {
+  config.baseURL = getApiBaseUrl();
+  return config;
+});
+
+// Export helper function for use in other components
+// Returns backend base URL without /api suffix
+export const getBackendBaseUrl = () => {
+  if (process.env.REACT_APP_API_URL) {
+    // Extract base URL without /api suffix
+    return process.env.REACT_APP_API_URL.replace('/api', '');
+  }
+  // Check process.env first (set at build/start time)
+  if (process.env.REACT_APP_BACKEND_PORT) {
+    return `http://localhost:${process.env.REACT_APP_BACKEND_PORT}`;
+  }
+  // Check window object (can be set dynamically)
+  if (typeof window !== 'undefined' && window.REACT_APP_BACKEND_PORT) {
+    return `http://localhost:${window.REACT_APP_BACKEND_PORT}`;
+  }
+  return 'http://localhost:7005';
+};
 
 export const getVideos = async () => {
   try {
@@ -30,11 +79,11 @@ export const getVideo = async (videoId) => {
 };
 
 export const getVideoStreamUrl = (videoId) => {
-  return `${API_BASE_URL}/videos/${videoId}/stream`;
+  return `${getApiBaseUrl()}/videos/${videoId}/stream`;
 };
 
 export const getThumbnailUrl = (videoId) => {
-  return `${API_BASE_URL}/videos/${videoId}/thumbnail`;
+  return `${getApiBaseUrl()}/videos/${videoId}/thumbnail`;
 };
 
 export const getMoments = async (videoId) => {
