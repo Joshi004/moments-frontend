@@ -44,7 +44,9 @@ const ModelNameChip = ({ modelName, generationConfig }) => {
     if (modelLower === 'minimax') {
       return { name: 'MiniMax', color: 'primary' };
     } else if (modelLower === 'qwen') {
-      return { name: 'Qwen', color: 'success' };
+      return { name: 'Qwen3-VL', color: 'success' };
+    } else if (modelLower === 'qwen3_omni') {
+      return { name: 'Qwen3-Omini', color: 'success' };
     }
     return { name: displayModel, color: 'default' };
   };

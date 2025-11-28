@@ -101,7 +101,7 @@ const GenerateMomentsModal = ({ open, onClose, onGenerate, video, isGenerating }
     }
 
     // Validate model
-    if (!model || (model !== 'minimax' && model !== 'qwen')) {
+    if (!model || (model !== 'minimax' && model !== 'qwen' && model !== 'qwen3_omni')) {
       newErrors.model = 'Please select a valid model';
     }
 
@@ -242,7 +242,8 @@ const GenerateMomentsModal = ({ open, onClose, onGenerate, video, isGenerating }
                   label="Model"
                 >
                   <MenuItem value="minimax">MiniMax</MenuItem>
-                  <MenuItem value="qwen">Qwen</MenuItem>
+                  <MenuItem value="qwen">Qwen3-VL</MenuItem>
+                  <MenuItem value="qwen3_omni">Qwen3-Omini</MenuItem>
                 </Select>
                 {errors.model && (
                   <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>

@@ -50,7 +50,9 @@ const MomentConfigDisplay = ({ generationConfig }) => {
     if (modelLower === 'minimax') {
       return { name: 'MiniMax', color: 'primary' };
     } else if (modelLower === 'qwen') {
-      return { name: 'Qwen', color: 'success' };
+      return { name: 'Qwen3-VL', color: 'success' };
+    } else if (modelLower === 'qwen3_omni') {
+      return { name: 'Qwen3-Omini', color: 'success' };
     }
     return { name: model, color: 'default' };
   };
@@ -303,4 +305,6 @@ const MomentConfigDisplay = ({ generationConfig }) => {
 };
 
 export default MomentConfigDisplay;
+
+
 
