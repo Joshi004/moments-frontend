@@ -47,6 +47,8 @@ const ModelNameChip = ({ modelName, generationConfig }) => {
       return { name: 'Qwen3-VL', color: 'success' };
     } else if (modelLower === 'qwen3_omni') {
       return { name: 'Qwen3-Omini', color: 'success' };
+    } else if (modelLower === 'qwen3_vl_fp8') {
+      return { name: 'Qwen3-VL-FP8', color: 'warning' };
     }
     return { name: displayModel, color: 'default' };
   };

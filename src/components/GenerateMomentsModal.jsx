@@ -34,7 +34,7 @@ const GenerateMomentsModal = ({ open, onClose, onGenerate, video, isGenerating }
   const [maxMomentLength, setMaxMomentLength] = useState(600);
   const [minMoments, setMinMoments] = useState(1);
   const [maxMoments, setMaxMoments] = useState(10);
-  const [model, setModel] = useState('minimax');
+  const [model, setModel] = useState('qwen3_vl_fp8');
   const [temperature, setTemperature] = useState(0.7);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
@@ -47,7 +47,7 @@ const GenerateMomentsModal = ({ open, onClose, onGenerate, video, isGenerating }
       setMaxMomentLength(600);
       setMinMoments(1);
       setMaxMoments(10);
-      setModel('minimax');
+      setModel('qwen3_vl_fp8');
       setTemperature(0.7);
       setErrors({});
       setSubmitError('');
@@ -101,7 +101,7 @@ const GenerateMomentsModal = ({ open, onClose, onGenerate, video, isGenerating }
     }
 
     // Validate model
-    if (!model || (model !== 'minimax' && model !== 'qwen' && model !== 'qwen3_omni')) {
+    if (!model || (model !== 'minimax' && model !== 'qwen' && model !== 'qwen3_omni' && model !== 'qwen3_vl_fp8')) {
       newErrors.model = 'Please select a valid model';
     }
 
@@ -136,7 +136,7 @@ const GenerateMomentsModal = ({ open, onClose, onGenerate, video, isGenerating }
       setMaxMomentLength(600);
       setMinMoments(1);
       setMaxMoments(10);
-      setModel('minimax');
+      setModel('qwen3_vl_fp8');
       setTemperature(0.7);
       setErrors({});
       setSubmitError('');
@@ -241,9 +241,10 @@ const GenerateMomentsModal = ({ open, onClose, onGenerate, video, isGenerating }
                   onChange={(e) => setModel(e.target.value)}
                   label="Model"
                 >
-                  <MenuItem value="minimax">MiniMax</MenuItem>
-                  <MenuItem value="qwen">Qwen3-VL</MenuItem>
-                  <MenuItem value="qwen3_omni">Qwen3-Omini</MenuItem>
+                  <MenuItem value="minimax" disabled={true}>MiniMax (temporarily disabled)</MenuItem>
+                  <MenuItem value="qwen" disabled={true}>Qwen3-VL (temporarily disabled)</MenuItem>
+                  <MenuItem value="qwen3_omni" disabled={true}>Qwen3-Omini (temporarily disabled)</MenuItem>
+                  <MenuItem value="qwen3_vl_fp8">Qwen3-VL-FP8</MenuItem>
                 </Select>
                 {errors.model && (
                   <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>

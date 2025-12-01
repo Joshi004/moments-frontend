@@ -48,7 +48,7 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
   const [userPrompt, setUserPrompt] = useState(DEFAULT_PROMPT);
   const [leftPadding, setLeftPadding] = useState(30);
   const [rightPadding, setRightPadding] = useState(30);
-  const [model, setModel] = useState('minimax');
+  const [model, setModel] = useState('qwen3_vl_fp8');
   const [temperature, setTemperature] = useState(0.7);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
@@ -59,7 +59,7 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
       setUserPrompt(DEFAULT_PROMPT);
       setLeftPadding(30);
       setRightPadding(30);
-      setModel('minimax');
+      setModel('qwen3_vl_fp8');
       setTemperature(0.7);
       setErrors({});
       setSubmitError('');
@@ -93,7 +93,7 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
     }
 
     // Validate model
-    if (!model || (model !== 'minimax' && model !== 'qwen' && model !== 'qwen3_omni')) {
+    if (!model || (model !== 'minimax' && model !== 'qwen' && model !== 'qwen3_omni' && model !== 'qwen3_vl_fp8')) {
       newErrors.model = 'Please select a valid model';
     }
 
@@ -124,7 +124,7 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
       setUserPrompt(DEFAULT_PROMPT);
       setLeftPadding(30);
       setRightPadding(30);
-      setModel('minimax');
+      setModel('qwen3_vl_fp8');
       setTemperature(0.7);
       setErrors({});
       setSubmitError('');
@@ -210,7 +210,7 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
               Context Padding (seconds)
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-              Include additional words before and after the moment to give the AI more context. This helps ensure precise boundaries.
+              Include additional words before and after the moment to give the AI more context. (Temporarily locked to default values)
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <TextField
@@ -219,9 +219,10 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
                 value={leftPadding}
                 onChange={(e) => setLeftPadding(e.target.value)}
                 error={!!errors.leftPadding}
-                helperText={errors.leftPadding || 'Seconds before moment start'}
+                helperText={errors.leftPadding || 'Locked at 30 seconds (temporarily)'}
                 disabled={isRefining}
                 inputProps={{ min: 0, step: 1 }}
+                InputProps={{ readOnly: true }}
               />
               <TextField
                 label="Right Padding"
@@ -229,9 +230,10 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
                 value={rightPadding}
                 onChange={(e) => setRightPadding(e.target.value)}
                 error={!!errors.rightPadding}
-                helperText={errors.rightPadding || 'Seconds after moment end'}
+                helperText={errors.rightPadding || 'Locked at 30 seconds (temporarily)'}
                 disabled={isRefining}
                 inputProps={{ min: 0, step: 1 }}
+                InputProps={{ readOnly: true }}
               />
             </Box>
           </Box>
@@ -249,9 +251,10 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
                   onChange={(e) => setModel(e.target.value)}
                   label="Model"
                 >
-                  <MenuItem value="minimax">MiniMax</MenuItem>
-                  <MenuItem value="qwen">Qwen3-VL</MenuItem>
-                  <MenuItem value="qwen3_omni">Qwen3-Omini</MenuItem>
+                  <MenuItem value="minimax" disabled={true}>MiniMax (temporarily disabled)</MenuItem>
+                  <MenuItem value="qwen" disabled={true}>Qwen3-VL (temporarily disabled)</MenuItem>
+                  <MenuItem value="qwen3_omni" disabled={true}>Qwen3-Omini (temporarily disabled)</MenuItem>
+                  <MenuItem value="qwen3_vl_fp8">Qwen3-VL-FP8</MenuItem>
                 </Select>
                 {errors.model && (
                   <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
