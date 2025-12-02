@@ -15,8 +15,9 @@ import VideoCaptions from './VideoCaptions';
 import AddMomentDialog from './AddMomentDialog';
 import GenerateMomentsModal from './GenerateMomentsModal';
 import RefineMomentModal from './RefineMomentModal';
+import ExtractClipsModal from './ExtractClipsModal';
 import MomentsList from './MomentsList';
-import { getVideoStreamUrl, getMoments, addMoment, getTranscript, generateMoments, getGenerationStatus, refineMoment, getRefinementStatus } from '../services/api';
+import { getVideoStreamUrl, getMoments, addMoment, getTranscript, generateMoments, getGenerationStatus, refineMoment, getRefinementStatus, extractClips, getClipExtractionStatus } from '../services/api';
 
 const VideoPlayer = ({
   video,
@@ -48,6 +49,10 @@ const VideoPlayer = ({
   const [isRefiningMoment, setIsRefiningMoment] = useState(false);
   const [refinementStatus, setRefinementStatus] = useState(null);
   const [refinementPollInterval, setRefinementPollInterval] = useState(null);
+  const [isExtractClipsModalOpen, setIsExtractClipsModalOpen] = useState(false);
+  const [isExtractingClips, setIsExtractingClips] = useState(false);
+  const [extractionStatus, setExtractionStatus] = useState(null);
+  const [extractionPollInterval, setExtractionPollInterval] = useState(null);
 
   const currentIndex = videos.findIndex((v) => v.id === video?.id);
   const hasPrevious = currentIndex > 0;
@@ -76,6 +81,10 @@ const VideoPlayer = ({
       setRefinementStatus(null);
       setMomentToRefine(null);
       setIsRefineMomentModalOpen(false);
+      // Reset extraction state
+      setIsExtractingClips(false);
+      setExtractionStatus(null);
+      setIsExtractClipsModalOpen(false);
       // Stop any existing polling
       if (generationPollInterval) {
         clearInterval(generationPollInterval);
@@ -84,6 +93,10 @@ const VideoPlayer = ({
       if (refinementPollInterval) {
         clearInterval(refinementPollInterval);
         setRefinementPollInterval(null);
+      }
+      if (extractionPollInterval) {
+        clearInterval(extractionPollInterval);
+        setExtractionPollInterval(null);
       }
     }
   }, [video, volume, isMuted]);
@@ -97,8 +110,11 @@ const VideoPlayer = ({
       if (refinementPollInterval) {
         clearInterval(refinementPollInterval);
       }
+      if (extractionPollInterval) {
+        clearInterval(extractionPollInterval);
+      }
     };
-  }, [generationPollInterval, refinementPollInterval]);
+  }, [generationPollInterval, refinementPollInterval, extractionPollInterval]);
 
   const fetchMoments = async () => {
     if (!video) return;
@@ -413,7 +429,7 @@ const VideoPlayer = ({
       if (!video) return;
 
       // Disable keyboard shortcuts when modals are open
-      if (isAddMomentDialogOpen || isGenerateMomentsModalOpen || isRefineMomentModalOpen) {
+      if (isAddMomentDialogOpen || isGenerateMomentsModalOpen || isRefineMomentModalOpen || isExtractClipsModalOpen) {
         return;
       }
 
@@ -455,7 +471,7 @@ const VideoPlayer = ({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [video, volume, duration, isAddMomentDialogOpen, isGenerateMomentsModalOpen, isRefineMomentModalOpen]);
+  }, [video, volume, duration, isAddMomentDialogOpen, isGenerateMomentsModalOpen, isRefineMomentModalOpen, isExtractClipsModalOpen]);
 
   const handleSeek = (value) => {
     const videoElement = videoRef.current;
@@ -587,6 +603,90 @@ const VideoPlayer = ({
       console.error('Error refining moment:', error);
       setIsRefiningMoment(false);
       const errorMessage = error.response?.data?.detail || error.message || 'Failed to start moment refinement. Please try again.';
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleExtractClipsClick = () => {
+    setIsExtractClipsModalOpen(true);
+  };
+
+  const handleExtractClips = async (config) => {
+    if (!video) return;
+    
+    try {
+      setIsExtractingClips(true);
+      setSnackbar({ open: false, message: '', severity: 'info' });
+      
+      // Start extraction
+      await extractClips(video.id, config);
+      
+      // Start polling for status
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await getClipExtractionStatus(video.id);
+          setExtractionStatus(status);
+          
+          if (status && status.status === 'completed') {
+            // Extraction completed
+            clearInterval(pollInterval);
+            setExtractionPollInterval(null);
+            setIsExtractingClips(false);
+            setIsExtractClipsModalOpen(false);
+            
+            const successMsg = status.processed_moments 
+              ? `Successfully extracted ${status.processed_moments - status.failed_moments} clips (${status.failed_moments} failed)`
+              : 'Clips extracted successfully!';
+            
+            setSnackbar({
+              open: true,
+              message: successMsg,
+              severity: 'success',
+            });
+          } else if (status && status.status === 'failed') {
+            // Extraction failed
+            clearInterval(pollInterval);
+            setExtractionPollInterval(null);
+            setIsExtractingClips(false);
+            
+            setSnackbar({
+              open: true,
+              message: 'Clip extraction failed. Please try again.',
+              severity: 'error',
+            });
+          }
+        } catch (error) {
+          console.error('Error polling extraction status:', error);
+          // Continue polling on error
+        }
+      }, 2000); // Poll every 2 seconds
+      
+      setExtractionPollInterval(pollInterval);
+      
+      // Set timeout to stop polling after 10 minutes
+      setTimeout(() => {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          setExtractionPollInterval(null);
+          if (isExtractingClips) {
+            setIsExtractingClips(false);
+            setSnackbar({
+              open: true,
+              message: 'Extraction timeout. Please check the status.',
+              severity: 'warning',
+            });
+          }
+        }
+      }, 10 * 60 * 1000); // 10 minutes
+      
+    } catch (error) {
+      console.error('Error extracting clips:', error);
+      setIsExtractingClips(false);
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start clip extraction. Please try again.';
       setSnackbar({
         open: true,
         message: errorMessage,
@@ -731,6 +831,7 @@ const VideoPlayer = ({
           onGenerateMomentsClick={() => setIsGenerateMomentsModalOpen(true)}
           hasTranscript={!!video.has_transcript}
           onRefineClick={handleRefineClick}
+          onExtractClipsClick={handleExtractClipsClick}
         />
       </Box>
 
@@ -760,6 +861,18 @@ const VideoPlayer = ({
         onRefine={handleRefineMoment}
         moment={momentToRefine}
         isRefining={isRefiningMoment}
+      />
+
+      <ExtractClipsModal
+        open={isExtractClipsModalOpen}
+        onClose={() => {
+          if (!isExtractingClips) {
+            setIsExtractClipsModalOpen(false);
+          }
+        }}
+        onExtract={handleExtractClips}
+        video={video}
+        isExtracting={isExtractingClips}
       />
 
       <Snackbar

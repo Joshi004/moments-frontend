@@ -176,6 +176,26 @@ export const getRefinementStatus = async (videoId, momentId) => {
   }
 };
 
+export const extractClips = async (videoId, config) => {
+  try {
+    const response = await api.post(`/videos/${videoId}/extract-clips`, config);
+    return response.data;
+  } catch (error) {
+    console.error('Error extracting clips:', error);
+    throw error;
+  }
+};
+
+export const getClipExtractionStatus = async (videoId) => {
+  try {
+    const response = await api.get(`/videos/${videoId}/clip-extraction-status`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching clip extraction status:', error);
+    throw error;
+  }
+};
+
 export default api;
 
 

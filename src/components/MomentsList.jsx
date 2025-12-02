@@ -11,7 +11,7 @@ import {
   Chip,
   Tooltip,
 } from '@mui/material';
-import { PlayArrow, Add, AutoAwesome, Tune, ExpandMore, ExpandLess } from '@mui/icons-material';
+import { PlayArrow, Add, AutoAwesome, Tune, ExpandMore, ExpandLess, ContentCut } from '@mui/icons-material';
 import MomentConfigDisplay from './MomentConfigDisplay';
 
 const formatTime = (seconds) => {
@@ -350,7 +350,7 @@ const RefinedMomentCard = ({ moment, isActive, onClick, theme }) => {
   );
 };
 
-const MomentsList = ({ moments, currentTime, duration, onMomentClick, onAddMomentClick, onGenerateMomentsClick, hasTranscript, onRefineClick }) => {
+const MomentsList = ({ moments, currentTime, duration, onMomentClick, onAddMomentClick, onGenerateMomentsClick, hasTranscript, onRefineClick, onExtractClipsClick }) => {
   const theme = useTheme();
   
   // Group moments: separate original and refined
@@ -440,16 +440,29 @@ const MomentsList = ({ moments, currentTime, duration, onMomentClick, onAddMomen
         },
       }}
     >
-      <Typography
-        variant="h6"
-        sx={{
-          mb: 2,
-          fontWeight: 500,
-          color: 'text.primary',
-        }}
-      >
-        Moments ({originalMoments.length})
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 500,
+            color: 'text.primary',
+          }}
+        >
+          Moments ({originalMoments.length})
+        </Typography>
+        
+        {originalMoments.length > 0 && (
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<ContentCut />}
+            onClick={onExtractClipsClick}
+            sx={{ ml: 2 }}
+          >
+            Extract Clips
+          </Button>
+        )}
+      </Box>
       
       {originalMoments.map((moment, index) => {
         const refinedMoments = refinedByParent[moment.id] || [];
