@@ -46,8 +46,6 @@ const formatTime = (seconds) => {
 
 const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
   const [userPrompt, setUserPrompt] = useState(DEFAULT_PROMPT);
-  const [leftPadding, setLeftPadding] = useState(30);
-  const [rightPadding, setRightPadding] = useState(30);
   const [model, setModel] = useState('qwen3_vl_fp8');
   const [temperature, setTemperature] = useState(0.7);
   const [errors, setErrors] = useState({});
@@ -57,8 +55,6 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
   useEffect(() => {
     if (open) {
       setUserPrompt(DEFAULT_PROMPT);
-      setLeftPadding(30);
-      setRightPadding(30);
       setModel('qwen3_vl_fp8');
       setTemperature(0.7);
       setErrors({});
@@ -72,18 +68,6 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
     // Validate prompt
     if (!userPrompt.trim()) {
       newErrors.userPrompt = 'Prompt cannot be empty';
-    }
-
-    // Validate padding
-    const leftPad = parseFloat(leftPadding);
-    const rightPad = parseFloat(rightPadding);
-    
-    if (isNaN(leftPad) || leftPad < 0) {
-      newErrors.leftPadding = 'Left padding must be >= 0';
-    }
-    
-    if (isNaN(rightPad) || rightPad < 0) {
-      newErrors.rightPadding = 'Right padding must be >= 0';
     }
 
     // Validate temperature
@@ -110,8 +94,6 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
 
     const config = {
       user_prompt: userPrompt.trim(),
-      left_padding: parseFloat(leftPadding),
-      right_padding: parseFloat(rightPadding),
       model: model,
       temperature: parseFloat(temperature),
     };
@@ -122,8 +104,6 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
   const handleClose = () => {
     if (!isRefining) {
       setUserPrompt(DEFAULT_PROMPT);
-      setLeftPadding(30);
-      setRightPadding(30);
       setModel('qwen3_vl_fp8');
       setTemperature(0.7);
       setErrors({});
@@ -184,7 +164,7 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
               Refinement Prompt (Editable)
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-              This prompt guides the AI in finding precise timestamps. The system will automatically add context about the moment and word-level transcript format.
+              This prompt guides the AI in finding precise timestamps. The system will automatically add context about the moment and word-level transcript format. Padding is configured in the backend (30 seconds on each side).
             </Typography>
             <TextField
               multiline
@@ -202,40 +182,6 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
                 },
               }}
             />
-          </Box>
-
-          {/* Padding Controls */}
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>
-              Context Padding (seconds)
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-              Include additional words before and after the moment to give the AI more context. (Temporarily locked to default values)
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <TextField
-                label="Left Padding"
-                type="number"
-                value={leftPadding}
-                onChange={(e) => setLeftPadding(e.target.value)}
-                error={!!errors.leftPadding}
-                helperText={errors.leftPadding || 'Locked at 30 seconds (temporarily)'}
-                disabled={isRefining}
-                inputProps={{ min: 0, step: 1 }}
-                InputProps={{ readOnly: true }}
-              />
-              <TextField
-                label="Right Padding"
-                type="number"
-                value={rightPadding}
-                onChange={(e) => setRightPadding(e.target.value)}
-                error={!!errors.rightPadding}
-                helperText={errors.rightPadding || 'Locked at 30 seconds (temporarily)'}
-                disabled={isRefining}
-                inputProps={{ min: 0, step: 1 }}
-                InputProps={{ readOnly: true }}
-              />
-            </Box>
           </Box>
 
           {/* Model and Temperature Controls */}
