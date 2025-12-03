@@ -861,6 +861,7 @@ const VideoPlayer = ({
         onRefine={handleRefineMoment}
         moment={momentToRefine}
         isRefining={isRefiningMoment}
+        videoId={video?.id}
       />
 
       <ExtractClipsModal

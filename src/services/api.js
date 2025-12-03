@@ -176,6 +176,16 @@ export const getRefinementStatus = async (videoId, momentId) => {
   }
 };
 
+export const checkVideoAvailability = async (videoId, momentId) => {
+  try {
+    const response = await api.get(`/videos/${videoId}/moments/${momentId}/video-availability`);
+    return response.data;
+  } catch (error) {
+    console.error('Error checking video availability:', error);
+    throw error;
+  }
+};
+
 export const extractClips = async (videoId, config) => {
   try {
     const response = await api.post(`/videos/${videoId}/extract-clips`, config);

@@ -18,8 +18,12 @@ import {
   Select,
   FormControl,
   InputLabel,
+  FormControlLabel,
+  Checkbox,
+  Tooltip,
 } from '@mui/material';
-import { ExpandMore } from '@mui/icons-material';
+import { ExpandMore, Videocam, VideocamOff } from '@mui/icons-material';
+import { checkVideoAvailability } from '../services/api';
 
 const DEFAULT_PROMPT = `Before refining the timestamps, let's define what a moment is: A moment is a segment of a video (with its corresponding transcript) that represents something engaging, meaningful, or valuable to the viewer. A moment should be a complete, coherent thought or concept that makes sense on its own.
 
@@ -44,12 +48,53 @@ const formatTime = (seconds) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
+// Model that supports video input
+const VIDEO_SUPPORTED_MODEL = 'qwen3_vl_fp8';
+
+const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining, videoId }) => {
   const [userPrompt, setUserPrompt] = useState(DEFAULT_PROMPT);
   const [model, setModel] = useState('qwen3_vl_fp8');
   const [temperature, setTemperature] = useState(0.7);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
+  
+  // Video-related state
+  const [includeVideo, setIncludeVideo] = useState(false);
+  const [videoAvailability, setVideoAvailability] = useState(null);
+  const [checkingVideo, setCheckingVideo] = useState(false);
+  const [videoError, setVideoError] = useState(null);
+
+  // Check video availability when modal opens or moment changes
+  useEffect(() => {
+    const fetchVideoAvailability = async () => {
+      if (!open || !videoId || !moment?.id) {
+        setVideoAvailability(null);
+        return;
+      }
+      
+      setCheckingVideo(true);
+      setVideoError(null);
+      
+      try {
+        const availability = await checkVideoAvailability(videoId, moment.id);
+        setVideoAvailability(availability);
+        
+        // Auto-enable video if available and model supports it
+        if (availability.available && availability.model_supports_video && model === VIDEO_SUPPORTED_MODEL) {
+          // Don't auto-enable, let user choose
+          setIncludeVideo(false);
+        }
+      } catch (error) {
+        console.error('Error checking video availability:', error);
+        setVideoError('Failed to check video availability');
+        setVideoAvailability(null);
+      } finally {
+        setCheckingVideo(false);
+      }
+    };
+    
+    fetchVideoAvailability();
+  }, [open, videoId, moment?.id, model]);
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -59,8 +104,16 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
       setTemperature(0.7);
       setErrors({});
       setSubmitError('');
+      setIncludeVideo(false);
     }
   }, [open]);
+  
+  // Disable video when switching to non-video model
+  useEffect(() => {
+    if (model !== VIDEO_SUPPORTED_MODEL && includeVideo) {
+      setIncludeVideo(false);
+    }
+  }, [model, includeVideo]);
 
   const validate = () => {
     const newErrors = {};
@@ -96,6 +149,7 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
       user_prompt: userPrompt.trim(),
       model: model,
       temperature: parseFloat(temperature),
+      include_video: includeVideo && model === VIDEO_SUPPORTED_MODEL,
     };
 
     onRefine(config);
@@ -108,8 +162,32 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
       setTemperature(0.7);
       setErrors({});
       setSubmitError('');
+      setIncludeVideo(false);
+      setVideoAvailability(null);
       onClose();
     }
+  };
+  
+  // Determine video checkbox state
+  const isVideoSupported = model === VIDEO_SUPPORTED_MODEL;
+  const isVideoAvailable = videoAvailability?.available === true;
+  const canIncludeVideo = isVideoSupported && isVideoAvailable;
+  
+  // Build tooltip message for video checkbox
+  const getVideoTooltip = () => {
+    if (!isVideoSupported) {
+      return 'Video refinement is only supported with Qwen3-VL-FP8 model';
+    }
+    if (checkingVideo) {
+      return 'Checking video availability...';
+    }
+    if (!isVideoAvailable) {
+      return videoAvailability?.warning || 'Video clip not available. Extract clips first.';
+    }
+    if (videoAvailability?.warning) {
+      return videoAvailability.warning;
+    }
+    return 'Include video clip for more accurate refinement';
   };
 
   if (!moment) {
@@ -220,6 +298,75 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
               />
             </Box>
           </Box>
+          
+          {/* Video Option Section */}
+          <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+            <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {canIncludeVideo ? <Videocam color="primary" /> : <VideocamOff color="disabled" />}
+              Video-Assisted Refinement
+            </Typography>
+            
+            <Tooltip title={getVideoTooltip()} arrow placement="top">
+              <span>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={includeVideo}
+                      onChange={(e) => setIncludeVideo(e.target.checked)}
+                      disabled={!canIncludeVideo || isRefining || checkingVideo}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2">
+                        Include video clip for refinement
+                      </Typography>
+                      {checkingVideo && <CircularProgress size={16} />}
+                    </Box>
+                  }
+                />
+              </span>
+            </Tooltip>
+            
+            {/* Video availability info */}
+            {videoError && (
+              <Alert severity="error" sx={{ mt: 1 }}>
+                {videoError}
+              </Alert>
+            )}
+            
+            {!checkingVideo && videoAvailability && (
+              <Box sx={{ mt: 1 }}>
+                {videoAvailability.available ? (
+                  <Box>
+                    {videoAvailability.warning ? (
+                      <Alert severity="warning" sx={{ mb: 1 }}>
+                        {videoAvailability.warning}
+                      </Alert>
+                    ) : (
+                      <Alert severity="success" sx={{ mb: 1 }}>
+                        Video clip available for this moment
+                        {videoAvailability.clip_duration && (
+                          <Typography variant="caption" display="block">
+                            Clip duration: {formatTime(videoAvailability.clip_duration)}
+                          </Typography>
+                        )}
+                      </Alert>
+                    )}
+                  </Box>
+                ) : (
+                  <Alert severity="info">
+                    {videoAvailability.warning || 'Video clip not available. Extract clips first to enable video refinement.'}
+                  </Alert>
+                )}
+              </Box>
+            )}
+            
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+              When enabled, the AI model will analyze both the video frames and transcript to find more precise timestamps.
+              {!isVideoSupported && ' Switch to Qwen3-VL-FP8 model to use this feature.'}
+            </Typography>
+          </Box>
 
           {/* Info Section */}
           <Accordion>
@@ -233,6 +380,7 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
               <Typography component="ul" variant="body2" color="text.secondary" sx={{ pl: 2 }}>
                 <li>Extract word-level timestamps from the transcript (with padding)</li>
                 <li>Provide the AI with precise word boundaries and their timestamps</li>
+                {includeVideo && <li><strong>Provide the video clip for visual analysis</strong></li>}
                 <li>Ask the AI to identify the exact start and end points</li>
                 <li>Create a new refined moment with improved timestamps</li>
                 <li>Keep the original moment for comparison</li>
@@ -247,7 +395,7 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
               <CircularProgress size={24} />
               <Typography variant="body2" color="text.secondary">
-                Refining moment... This may take a minute.
+                Refining moment{includeVideo ? ' with video analysis' : ''}... This may take a minute.
               </Typography>
             </Box>
           )}
@@ -262,9 +410,9 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
           variant="contained"
           color="primary"
           disabled={isRefining}
-          startIcon={isRefining ? <CircularProgress size={16} /> : null}
+          startIcon={isRefining ? <CircularProgress size={16} /> : (includeVideo ? <Videocam /> : null)}
         >
-          {isRefining ? 'Refining...' : 'Refine Moment'}
+          {isRefining ? 'Refining...' : (includeVideo ? 'Refine with Video' : 'Refine Moment')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -272,4 +420,3 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining }) => {
 };
 
 export default RefineMomentModal;
-
