@@ -7,12 +7,13 @@ import {
   Button,
   useTheme,
   IconButton,
-  Collapse,
-  Chip,
   Tooltip,
+  Tabs,
+  Tab,
+  Chip,
 } from '@mui/material';
-import { PlayArrow, Add, AutoAwesome, Tune, ExpandMore, ExpandLess, ContentCut } from '@mui/icons-material';
-import MomentConfigDisplay from './MomentConfigDisplay';
+import { PlayArrow, Add, AutoAwesome, Tune, Info, ContentCut } from '@mui/icons-material';
+import MomentConfigDrawer from './MomentConfigDrawer';
 
 const formatTime = (seconds) => {
   if (isNaN(seconds)) return '0:00';
@@ -33,88 +34,31 @@ const formatDuration = (startTime, endTime) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const ModelNameChip = ({ modelName, generationConfig }) => {
-  // Use model from generation_config if available, fallback to model_name
-  const modelFromConfig = generationConfig?.model;
-  const displayModel = modelFromConfig || modelName || 'Unknown Model';
+const getModelName = (moment) => {
+  // Try to get model from generation_config first
+  const model = moment.generation_config?.model || moment.model_name;
+  if (!model) return null;
   
-  // Get model display name and color
-  const getModelDisplay = () => {
-    const modelLower = displayModel.toLowerCase();
-    if (modelLower === 'minimax') {
-      return { name: 'MiniMax', color: 'primary' };
-    } else if (modelLower === 'qwen') {
-      return { name: 'Qwen3-VL', color: 'success' };
-    } else if (modelLower === 'qwen3_omni') {
-      return { name: 'Qwen3-Omini', color: 'success' };
-    } else if (modelLower === 'qwen3_vl_fp8') {
-      return { name: 'Qwen3-VL-FP8', color: 'warning' };
-    }
-    return { name: displayModel, color: 'default' };
-  };
-
-  const modelDisplay = getModelDisplay();
-  const prompt = generationConfig?.user_prompt || generationConfig?.complete_prompt;
-  const hasPrompt = prompt && prompt.trim().length > 0;
-  
-  const tooltipContent = hasPrompt ? (
-    <Box
-      sx={{
-        maxWidth: '500px',
-        maxHeight: '400px',
-        overflow: 'auto',
-        p: 1,
-      }}
-    >
-      <Typography
-        variant="caption"
-        component="pre"
-        sx={{
-          fontFamily: 'monospace',
-          fontSize: '0.75rem',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          margin: 0,
-        }}
-      >
-        {prompt}
-      </Typography>
-    </Box>
-  ) : (
-    <Typography variant="caption">Prompt not available</Typography>
-  );
-
-  return (
-    <Tooltip
-      title={tooltipContent}
-      arrow
-      placement="top"
-      enterDelay={300}
-      leaveDelay={100}
-    >
-      <Chip
-        label={modelDisplay.name}
-        size="small"
-        color={modelDisplay.color}
-        variant="outlined"
-        sx={{
-          fontSize: '0.7rem',
-          height: '20px',
-          cursor: hasPrompt ? 'help' : 'default',
-          opacity: 0.8,
-          '&:hover': {
-            opacity: 1,
-          },
-        }}
-      />
-    </Tooltip>
-  );
+  const modelLower = model.toLowerCase();
+  if (modelLower === 'minimax') return 'MiniMax';
+  if (modelLower === 'qwen') return 'Qwen3-VL';
+  if (modelLower === 'qwen3_omni') return 'Qwen3-Omini';
+  if (modelLower === 'qwen3_vl_fp8') return 'Qwen3-VL-FP8';
+  return model;
 };
 
-const MomentCard = ({ moment, isActive, onClick, onHover, onLeave, onRefineClick, refinedMoments = [], hasTranscript }) => {
+const MomentCard = ({ 
+  moment, 
+  isActive, 
+  onClick, 
+  onRefineClick, 
+  refinedMoments = [], 
+  hasTranscript,
+  onConfigClick 
+}) => {
   const theme = useTheme();
   const cardRef = useRef(null);
-  const [expanded, setExpanded] = useState(false);
+  const [selectedTab, setSelectedTab] = useState(0); // 0 = Coarse, 1+ = Refined versions
 
   useEffect(() => {
     // Auto-scroll active moment into view
@@ -126,29 +70,53 @@ const MomentCard = ({ moment, isActive, onClick, onHover, onLeave, onRefineClick
     }
   }, [isActive]);
 
+  // Reset to coarse tab when moment changes
+  useEffect(() => {
+    setSelectedTab(0);
+  }, [moment.id]);
+
+  const hasRefinedVersion = refinedMoments.length > 0;
+  
+  // Build tabs array dynamically
+  const tabs = [
+    { label: 'Coarse', moment: moment },
+    ...refinedMoments.map((refined, idx) => ({
+      label: refinedMoments.length === 1 ? 'Refined' : `Refined ${idx + 1}`,
+      moment: refined
+    }))
+  ];
+  
+  const displayMoment = tabs[selectedTab]?.moment || moment;
+
+  const handleTabChange = (event, newValue) => {
+    setSelectedTab(newValue);
+  };
+
+  const handleCardClick = () => {
+    onClick(displayMoment.start_time);
+  };
+
   const handleRefineClick = (e) => {
     e.stopPropagation();
     onRefineClick(moment);
   };
 
-  const handleExpandClick = (e) => {
+  const handleConfigClick = (e) => {
     e.stopPropagation();
-    setExpanded(!expanded);
+    onConfigClick(displayMoment.generation_config, displayMoment.title || moment.title);
   };
 
   return (
     <Box ref={cardRef} sx={{ mb: 1.5 }}>
       <Card
-        onClick={() => onClick(moment.start_time)}
-        onMouseEnter={onHover}
-        onMouseLeave={onLeave}
+        onClick={handleCardClick}
         sx={{
           cursor: 'pointer',
           backgroundColor: isActive ? 'rgba(255, 0, 0, 0.08)' : 'background.paper',
           color: 'text.primary',
           border: '1px solid',
           borderColor: 'divider',
-          borderLeft: isActive ? `4px solid ${theme.palette.primary.main}` : 'none',
+          borderLeft: isActive ? `4px solid ${theme.palette.primary.main}` : '1px solid',
           boxShadow: isActive ? '0 2px 8px rgba(255, 0, 0, 0.15)' : 'none',
           transition: 'all 0.2s ease-in-out',
           '&:hover': {
@@ -164,61 +132,24 @@ const MomentCard = ({ moment, isActive, onClick, onHover, onLeave, onRefineClick
         elevation={isActive ? 2 : 1}
       >
         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-            {/* Visual Indicator */}
-            <Box
+          {/* Header Row */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1 }}>
+            <Typography
+              variant="h6"
+              component="h3"
               sx={{
-                width: 4,
-                minWidth: 4,
-                height: '100%',
-                backgroundColor: theme.palette.primary.main,
-                borderRadius: 1,
-                opacity: isActive ? 0.6 : 0.4,
+                fontWeight: isActive ? 600 : 500,
+                fontSize: '1rem',
+                lineHeight: 1.3,
+                flex: 1,
+                minWidth: 0,
+                pr: 2,
               }}
-            />
+            >
+              {moment.title}
+            </Typography>
             
-            {/* Content */}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                variant="h6"
-                component="h3"
-                sx={{
-                  fontWeight: isActive ? 600 : 500,
-                  mb: 1,
-                  fontSize: '1rem',
-                  lineHeight: 1.3,
-                }}
-              >
-                {moment.title}
-              </Typography>
-              
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontFamily: 'monospace',
-                    opacity: isActive ? 0.9 : 0.7,
-                    fontSize: '0.875rem',
-                  }}
-                >
-                  {formatTime(moment.start_time)} - {formatTime(moment.end_time)}
-                </Typography>
-                
-                <Typography
-                  variant="body2"
-                  sx={{
-                    opacity: isActive ? 0.8 : 0.6,
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  Duration: {formatDuration(moment.start_time, moment.end_time)}
-                </Typography>
-                
-                <ModelNameChip modelName={moment.model_name} generationConfig={moment.generation_config} />
-              </Box>
-            </Box>
-            
-            {/* Actions */}
+            {/* Action Buttons */}
             <Box
               sx={{
                 display: 'flex',
@@ -226,132 +157,123 @@ const MomentCard = ({ moment, isActive, onClick, onHover, onLeave, onRefineClick
                 gap: 0.5,
               }}
             >
-              {hasTranscript && !moment.is_refined && (
-                <Tooltip title="Refine moment timestamps">
+              {displayMoment.generation_config && (
+                <Tooltip title="View configuration">
                   <IconButton
                     size="small"
-                    onClick={handleRefineClick}
+                    onClick={handleConfigClick}
                     sx={{ opacity: 0.7, '&:hover': { opacity: 1 } }}
                   >
-                    <Tune fontSize="small" />
+                    <Info fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
-              {refinedMoments.length > 0 && (
-                <Tooltip title={expanded ? "Hide refined versions" : "Show refined versions"}>
-                  <IconButton
-                    size="small"
-                    onClick={handleExpandClick}
-                    sx={{ opacity: 0.7, '&:hover': { opacity: 1 } }}
-                  >
-                    {expanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
-                  </IconButton>
-                </Tooltip>
-              )}
-              <PlayArrow sx={{ opacity: isActive ? 1 : 0.5 }} />
+              <PlayArrow sx={{ opacity: isActive ? 1 : 0.5, ml: 0.5 }} />
             </Box>
           </Box>
-          
-          {/* Configuration Display */}
-          {moment.generation_config && (
+
+          {/* Tabs for Coarse/Refined - Show all versions */}
+          {tabs.length > 1 && (
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 1.5 }}>
+              <Tabs
+                value={selectedTab}
+                onChange={handleTabChange}
+                onClick={(e) => e.stopPropagation()}
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{
+                  minHeight: 36,
+                  '& .MuiTab-root': {
+                    minHeight: 36,
+                    fontSize: '0.8rem',
+                    textTransform: 'none',
+                    minWidth: 70,
+                    py: 0.5,
+                  },
+                }}
+              >
+                {tabs.map((tab, idx) => (
+                  <Tab key={idx} label={tab.label} />
+                ))}
+              </Tabs>
+            </Box>
+          )}
+
+          {/* Timestamp and Duration */}
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontFamily: 'monospace',
+                opacity: isActive ? 0.9 : 0.7,
+                fontSize: '0.875rem',
+              }}
+            >
+              {formatTime(displayMoment.start_time)} - {formatTime(displayMoment.end_time)}
+            </Typography>
+            
+            <Typography
+              variant="body2"
+              sx={{
+                opacity: isActive ? 0.8 : 0.6,
+                fontSize: '0.75rem',
+              }}
+            >
+              Duration: {formatDuration(displayMoment.start_time, displayMoment.end_time)}
+            </Typography>
+          </Box>
+
+          {/* Model Chip */}
+          {getModelName(displayMoment) && (
             <Box sx={{ mt: 1 }}>
-              <MomentConfigDisplay generationConfig={moment.generation_config} />
+              <Chip
+                label={getModelName(displayMoment)}
+                size="small"
+                variant="outlined"
+                sx={{
+                  fontSize: '0.7rem',
+                  height: '20px',
+                  opacity: 0.8,
+                }}
+              />
+            </Box>
+          )}
+
+          {/* Refine button - Always show if has transcript and not a refined moment itself */}
+          {hasTranscript && !moment.is_refined && (
+            <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Tune />}
+                onClick={handleRefineClick}
+                sx={{ fontSize: '0.75rem' }}
+              >
+                Refine Timestamps
+              </Button>
             </Box>
           )}
         </CardContent>
       </Card>
-
-      {/* Refined Moments */}
-      {refinedMoments.length > 0 && (
-        <Collapse in={expanded}>
-          <Box sx={{ pl: 4, pt: 1 }}>
-            {refinedMoments.map((refined, index) => (
-              <RefinedMomentCard
-                key={refined.id || `${refined.start_time}-${refined.end_time}-${index}`}
-                moment={refined}
-                isActive={isActive}
-                onClick={onClick}
-                theme={theme}
-              />
-            ))}
-          </Box>
-        </Collapse>
-      )}
     </Box>
   );
 };
 
-const RefinedMomentCard = ({ moment, isActive, onClick, theme }) => {
-  return (
-    <Card
-      onClick={() => onClick(moment.start_time)}
-      sx={{
-        cursor: 'pointer',
-        mb: 1,
-        backgroundColor: isActive ? 'rgba(76, 175, 80, 0.08)' : 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider',
-        borderLeft: isActive ? '4px solid #4caf50' : '4px solid #4caf5080',
-        boxShadow: 'none',
-        transition: 'all 0.2s ease-in-out',
-        '&:hover': {
-          transform: 'translateY(-1px)',
-          boxShadow: theme.shadows[1],
-          backgroundColor: isActive 
-            ? 'rgba(76, 175, 80, 0.12)' 
-            : 'action.hover',
-        },
-      }}
-    >
-      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Chip 
-            label="Refined" 
-            size="small" 
-            color="success" 
-            variant="outlined"
-            sx={{ fontSize: '0.7rem', height: '20px' }}
-          />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontFamily: 'monospace',
-                  fontSize: '0.8rem',
-                  opacity: 0.9,
-                }}
-              >
-                {formatTime(moment.start_time)} - {formatTime(moment.end_time)}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontSize: '0.7rem',
-                  opacity: 0.7,
-                }}
-              >
-                Duration: {formatDuration(moment.start_time, moment.end_time)}
-              </Typography>
-              <ModelNameChip modelName={moment.model_name} generationConfig={moment.generation_config} />
-            </Box>
-          </Box>
-          <PlayArrow sx={{ fontSize: '1.2rem', opacity: 0.5 }} />
-        </Box>
-        
-        {/* Configuration Display */}
-        {moment.generation_config && (
-          <Box sx={{ px: 0, pb: 0, pt: 1 }}>
-            <MomentConfigDisplay generationConfig={moment.generation_config} />
-          </Box>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-const MomentsList = ({ moments, currentTime, duration, onMomentClick, onAddMomentClick, onGenerateMomentsClick, hasTranscript, onRefineClick, onExtractClipsClick }) => {
+const MomentsList = ({ 
+  moments, 
+  currentTime, 
+  duration, 
+  onMomentClick, 
+  onAddMomentClick, 
+  onGenerateMomentsClick, 
+  hasTranscript, 
+  onRefineClick, 
+  onExtractClipsClick 
+}) => {
   const theme = useTheme();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState(null);
+  const [selectedMomentTitle, setSelectedMomentTitle] = useState('');
   
   // Group moments: separate original and refined
   const originalMoments = moments.filter(m => !m.is_refined);
@@ -379,6 +301,21 @@ const MomentsList = ({ moments, currentTime, duration, onMomentClick, onAddMomen
   );
   
   const activeMoment = activeMomentIndex >= 0 ? originalMoments[activeMomentIndex] : null;
+
+  const handleConfigClick = (config, title) => {
+    setSelectedConfig(config);
+    setSelectedMomentTitle(title);
+    setDrawerOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
+    // Don't clear config immediately to avoid flicker during close animation
+    setTimeout(() => {
+      setSelectedConfig(null);
+      setSelectedMomentTitle('');
+    }, 200);
+  };
 
   // Empty state
   if (moments.length === 0) {
@@ -419,76 +356,83 @@ const MomentsList = ({ moments, currentTime, duration, onMomentClick, onAddMomen
   }
 
   return (
-    <Box
-      sx={{
-        p: 2,
-        backgroundColor: 'background.paper',
-        maxHeight: '400px',
-        overflowY: 'auto',
-        '&::-webkit-scrollbar': {
-          width: '8px',
-        },
-        '&::-webkit-scrollbar-track': {
-          backgroundColor: 'action.hover',
-        },
-        '&::-webkit-scrollbar-thumb': {
-          backgroundColor: 'action.disabled',
-          borderRadius: '4px',
-          '&:hover': {
-            backgroundColor: 'action.disabledBackground',
+    <>
+      <Box
+        sx={{
+          p: 2,
+          backgroundColor: 'background.paper',
+          maxHeight: '400px',
+          overflowY: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '8px',
           },
-        },
-      }}
-    >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 500,
-            color: 'text.primary',
-          }}
-        >
-          Moments ({originalMoments.length})
-        </Typography>
-        
-        {originalMoments.length > 0 && (
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<ContentCut />}
-            onClick={onExtractClipsClick}
-            sx={{ ml: 2 }}
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'action.hover',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'action.disabled',
+            borderRadius: '4px',
+            '&:hover': {
+              backgroundColor: 'action.disabledBackground',
+            },
+          },
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 500,
+              color: 'text.primary',
+            }}
           >
-            Extract Clips
-          </Button>
-        )}
-      </Box>
-      
-      {originalMoments.map((moment, index) => {
-        const refinedMoments = refinedByParent[moment.id] || [];
-        // Check if any refined moment is active
-        const isRefinedActive = refinedMoments.some(refined => 
-          currentTime >= refined.start_time && currentTime <= refined.end_time
-        );
-        const isActive = index === activeMomentIndex || isRefinedActive;
+            Moments ({originalMoments.length})
+          </Typography>
+          
+          {originalMoments.length > 0 && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ContentCut />}
+              onClick={onExtractClipsClick}
+              sx={{ ml: 2 }}
+            >
+              Extract Clips
+            </Button>
+          )}
+        </Box>
         
-        return (
-          <MomentCard
-            key={moment.id || `${moment.start_time}-${moment.end_time}-${index}`}
-            moment={moment}
-            isActive={isActive}
-            onClick={onMomentClick}
-            onHover={() => {}}
-            onLeave={() => {}}
-            onRefineClick={onRefineClick}
-            refinedMoments={refinedMoments}
-            hasTranscript={hasTranscript}
-          />
-        );
-      })}
-    </Box>
+        {originalMoments.map((moment, index) => {
+          const refinedMoments = refinedByParent[moment.id] || [];
+          // Check if any refined moment is active
+          const isRefinedActive = refinedMoments.some(refined => 
+            currentTime >= refined.start_time && currentTime <= refined.end_time
+          );
+          const isActive = index === activeMomentIndex || isRefinedActive;
+          
+          return (
+            <MomentCard
+              key={moment.id || `${moment.start_time}-${moment.end_time}-${index}`}
+              moment={moment}
+              isActive={isActive}
+              onClick={onMomentClick}
+              onRefineClick={onRefineClick}
+              refinedMoments={refinedMoments}
+              hasTranscript={hasTranscript}
+              onConfigClick={handleConfigClick}
+            />
+          );
+        })}
+      </Box>
+
+      <MomentConfigDrawer
+        open={drawerOpen}
+        onClose={handleDrawerClose}
+        config={selectedConfig}
+        momentTitle={selectedMomentTitle}
+      />
+    </>
   );
 };
 
 export default MomentsList;
-
