@@ -8,7 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 
-const ProcessAudioModal = ({ open, onClose, video, onProcess }) => {
+const ProcessAudioModal = ({ open, onClose, video, onProcess, isProcessing }) => {
   const handleProcess = async () => {
     if (!video || !video.id) {
       console.error('ProcessAudioModal: video or video.id is missing', video);
@@ -43,8 +43,13 @@ const ProcessAudioModal = ({ open, onClose, video, onProcess }) => {
         <Button onClick={onClose} color="secondary">
           Cancel
         </Button>
-        <Button onClick={handleProcess} color="primary" variant="contained">
-          Process Audio File
+        <Button 
+          onClick={handleProcess} 
+          color="primary" 
+          variant="contained"
+          disabled={isProcessing}
+        >
+          {isProcessing ? 'Processing...' : 'Process Audio File'}
         </Button>
       </DialogActions>
     </Dialog>
