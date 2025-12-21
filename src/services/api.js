@@ -206,6 +206,26 @@ export const getClipExtractionStatus = async (videoId) => {
   }
 };
 
+export const getAudioExtractionStatus = async (videoId) => {
+  try {
+    const response = await api.get(`/videos/${videoId}/audio-extraction-status`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching audio extraction status:', error);
+    throw error;
+  }
+};
+
+export const getTranscriptionStatus = async (videoId) => {
+  try {
+    const response = await api.get(`/videos/${videoId}/transcription-status`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching transcription status:', error);
+    throw error;
+  }
+};
+
 export default api;
 
 

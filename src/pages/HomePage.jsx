@@ -4,7 +4,7 @@ import VideoGrid from '../components/VideoGrid';
 import VideoPlayer from '../components/VideoPlayer';
 import ProcessAudioModal from '../components/ProcessAudioModal';
 import ProcessTranscriptModal from '../components/ProcessTranscriptModal';
-import { getVideos, processAudio, processTranscript } from '../services/api';
+import { getVideos, processAudio, processTranscript, getAudioExtractionStatus, getTranscriptionStatus } from '../services/api';
 
 const HomePage = () => {
   const [videos, setVideos] = useState([]);
@@ -15,10 +15,28 @@ const HomePage = () => {
   const [processTranscriptModalOpen, setProcessTranscriptModalOpen] = useState(false);
   const [videoToProcess, setVideoToProcess] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  // Audio extraction state
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const [audioExtractionPollInterval, setAudioExtractionPollInterval] = useState(null);
+  // Transcription state
+  const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
+  const [transcriptionPollInterval, setTranscriptionPollInterval] = useState(null);
 
   useEffect(() => {
     fetchVideos();
   }, []);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (audioExtractionPollInterval) {
+        clearInterval(audioExtractionPollInterval);
+      }
+      if (transcriptionPollInterval) {
+        clearInterval(transcriptionPollInterval);
+      }
+    };
+  }, [audioExtractionPollInterval, transcriptionPollInterval]);
 
   const fetchVideos = async () => {
     try {
@@ -68,19 +86,74 @@ const HomePage = () => {
 
   const handleProcessAudio = async (videoId) => {
     try {
+      setIsProcessingAudio(true);
+      setSnackbar({ open: false, message: '', severity: 'info' });
+      
+      // Start audio extraction
       await processAudio(videoId);
-      setSnackbar({
-        open: true,
-        message: 'Audio processing started. This may take a few minutes.',
-        severity: 'info',
-      });
-      // Refresh videos after a delay to update has_audio status
+      
+      // Start polling for status
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await getAudioExtractionStatus(videoId);
+          
+          if (status && status.status === 'completed') {
+            // Extraction completed
+            clearInterval(pollInterval);
+            setAudioExtractionPollInterval(null);
+            setIsProcessingAudio(false);
+            setProcessAudioModalOpen(false);
+            setVideoToProcess(null);
+            
+            // Refresh video list to show audio is available
+            await fetchVideos();
+            
+            setSnackbar({
+              open: true,
+              message: 'Audio extracted successfully!',
+              severity: 'success',
+            });
+          } else if (status && status.status === 'failed') {
+            // Extraction failed
+            clearInterval(pollInterval);
+            setAudioExtractionPollInterval(null);
+            setIsProcessingAudio(false);
+            
+            const errorMsg = status.error || 'Audio extraction failed. Please try again.';
+            setSnackbar({
+              open: true,
+              message: errorMsg,
+              severity: 'error',
+            });
+          }
+        } catch (error) {
+          console.error('Error polling audio extraction status:', error);
+          // Continue polling on error
+        }
+      }, 2000); // Poll every 2 seconds
+      
+      setAudioExtractionPollInterval(pollInterval);
+      
+      // Set timeout to stop polling after 15 minutes
       setTimeout(() => {
-        fetchVideos();
-      }, 2000);
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          setAudioExtractionPollInterval(null);
+          if (isProcessingAudio) {
+            setIsProcessingAudio(false);
+            setSnackbar({
+              open: true,
+              message: 'Audio extraction timeout. Please check the status manually.',
+              severity: 'warning',
+            });
+          }
+        }
+      }, 15 * 60 * 1000); // 15 minutes
+      
     } catch (error) {
       console.error('Error processing audio:', error);
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start audio processing. Please try again.';
+      setIsProcessingAudio(false);
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start audio extraction. Please try again.';
       setSnackbar({
         open: true,
         message: errorMessage,
@@ -92,19 +165,74 @@ const HomePage = () => {
 
   const handleProcessTranscript = async (videoId) => {
     try {
+      setIsProcessingTranscript(true);
+      setSnackbar({ open: false, message: '', severity: 'info' });
+      
+      // Start transcription
       await processTranscript(videoId);
-      setSnackbar({
-        open: true,
-        message: 'Transcript generation started. This may take a few minutes.',
-        severity: 'info',
-      });
-      // Refresh videos after a delay to update has_transcript status
+      
+      // Start polling for status
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await getTranscriptionStatus(videoId);
+          
+          if (status && status.status === 'completed') {
+            // Transcription completed
+            clearInterval(pollInterval);
+            setTranscriptionPollInterval(null);
+            setIsProcessingTranscript(false);
+            setProcessTranscriptModalOpen(false);
+            setVideoToProcess(null);
+            
+            // Refresh video list to show transcript is available
+            await fetchVideos();
+            
+            setSnackbar({
+              open: true,
+              message: 'Transcript generated successfully!',
+              severity: 'success',
+            });
+          } else if (status && status.status === 'failed') {
+            // Transcription failed
+            clearInterval(pollInterval);
+            setTranscriptionPollInterval(null);
+            setIsProcessingTranscript(false);
+            
+            const errorMsg = status.error || 'Transcription failed. Please try again.';
+            setSnackbar({
+              open: true,
+              message: errorMsg,
+              severity: 'error',
+            });
+          }
+        } catch (error) {
+          console.error('Error polling transcription status:', error);
+          // Continue polling on error
+        }
+      }, 2000); // Poll every 2 seconds
+      
+      setTranscriptionPollInterval(pollInterval);
+      
+      // Set timeout to stop polling after 15 minutes
       setTimeout(() => {
-        fetchVideos();
-      }, 2000);
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          setTranscriptionPollInterval(null);
+          if (isProcessingTranscript) {
+            setIsProcessingTranscript(false);
+            setSnackbar({
+              open: true,
+              message: 'Transcription timeout. Please check the status manually.',
+              severity: 'warning',
+            });
+          }
+        }
+      }, 15 * 60 * 1000); // 15 minutes
+      
     } catch (error) {
       console.error('Error processing transcript:', error);
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start transcript generation. Please try again.';
+      setIsProcessingTranscript(false);
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start transcription. Please try again.';
       setSnackbar({
         open: true,
         message: errorMessage,
@@ -172,6 +300,7 @@ const HomePage = () => {
         }}
         video={videoToProcess}
         onProcess={handleProcessAudio}
+        isProcessing={isProcessingAudio}
       />
 
       <ProcessTranscriptModal
@@ -182,6 +311,7 @@ const HomePage = () => {
         }}
         video={videoToProcess}
         onProcess={handleProcessTranscript}
+        isProcessing={isProcessingTranscript}
       />
 
       <Snackbar

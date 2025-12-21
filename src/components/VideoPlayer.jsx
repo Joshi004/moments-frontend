@@ -17,7 +17,7 @@ import GenerateMomentsModal from './GenerateMomentsModal';
 import RefineMomentModal from './RefineMomentModal';
 import ExtractClipsModal from './ExtractClipsModal';
 import MomentsList from './MomentsList';
-import { getVideoStreamUrl, getMoments, addMoment, getTranscript, generateMoments, getGenerationStatus, refineMoment, getRefinementStatus, extractClips, getClipExtractionStatus } from '../services/api';
+import { getVideoStreamUrl, getMoments, addMoment, getTranscript, generateMoments, getGenerationStatus, refineMoment, getRefinementStatus, extractClips, getClipExtractionStatus, getAudioExtractionStatus, getTranscriptionStatus } from '../services/api';
 
 const VideoPlayer = ({
   video,
@@ -53,6 +53,14 @@ const VideoPlayer = ({
   const [isExtractingClips, setIsExtractingClips] = useState(false);
   const [extractionStatus, setExtractionStatus] = useState(null);
   const [extractionPollInterval, setExtractionPollInterval] = useState(null);
+  // Audio extraction state
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const [audioExtractionStatus, setAudioExtractionStatus] = useState(null);
+  const [audioExtractionPollInterval, setAudioExtractionPollInterval] = useState(null);
+  // Transcription state
+  const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
+  const [transcriptionStatus, setTranscriptionStatus] = useState(null);
+  const [transcriptionPollInterval, setTranscriptionPollInterval] = useState(null);
 
   const currentIndex = videos.findIndex((v) => v.id === video?.id);
   const hasPrevious = currentIndex > 0;
@@ -85,6 +93,12 @@ const VideoPlayer = ({
       setIsExtractingClips(false);
       setExtractionStatus(null);
       setIsExtractClipsModalOpen(false);
+      // Reset audio extraction state
+      setIsProcessingAudio(false);
+      setAudioExtractionStatus(null);
+      // Reset transcription state
+      setIsProcessingTranscript(false);
+      setTranscriptionStatus(null);
       // Stop any existing polling
       if (generationPollInterval) {
         clearInterval(generationPollInterval);
@@ -97,6 +111,14 @@ const VideoPlayer = ({
       if (extractionPollInterval) {
         clearInterval(extractionPollInterval);
         setExtractionPollInterval(null);
+      }
+      if (audioExtractionPollInterval) {
+        clearInterval(audioExtractionPollInterval);
+        setAudioExtractionPollInterval(null);
+      }
+      if (transcriptionPollInterval) {
+        clearInterval(transcriptionPollInterval);
+        setTranscriptionPollInterval(null);
       }
     }
   }, [video, volume, isMuted]);
@@ -113,8 +135,14 @@ const VideoPlayer = ({
       if (extractionPollInterval) {
         clearInterval(extractionPollInterval);
       }
+      if (audioExtractionPollInterval) {
+        clearInterval(audioExtractionPollInterval);
+      }
+      if (transcriptionPollInterval) {
+        clearInterval(transcriptionPollInterval);
+      }
     };
-  }, [generationPollInterval, refinementPollInterval, extractionPollInterval]);
+  }, [generationPollInterval, refinementPollInterval, extractionPollInterval, audioExtractionPollInterval, transcriptionPollInterval]);
 
   const fetchMoments = async () => {
     if (!video) return;
