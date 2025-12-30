@@ -226,6 +226,47 @@ export const getTranscriptionStatus = async (videoId) => {
   }
 };
 
+// Pipeline API
+export const startPipeline = async (videoId, config) => {
+  try {
+    const response = await api.post(`/pipeline/${videoId}/start`, config);
+    return response.data;
+  } catch (error) {
+    console.error('Error starting pipeline:', error);
+    throw error;
+  }
+};
+
+export const getPipelineStatus = async (videoId) => {
+  try {
+    const response = await api.get(`/pipeline/${videoId}/status`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching pipeline status:', error);
+    throw error;
+  }
+};
+
+export const cancelPipeline = async (videoId) => {
+  try {
+    const response = await api.post(`/pipeline/${videoId}/cancel`);
+    return response.data;
+  } catch (error) {
+    console.error('Error cancelling pipeline:', error);
+    throw error;
+  }
+};
+
+export const getPipelineHistory = async (videoId) => {
+  try {
+    const response = await api.get(`/pipeline/${videoId}/history`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching pipeline history:', error);
+    throw error;
+  }
+};
+
 export default api;
 
 
