@@ -6,6 +6,7 @@ import ProcessAudioModal from '../components/ProcessAudioModal';
 import ProcessTranscriptModal from '../components/ProcessTranscriptModal';
 import UnifiedPipelineModal from '../components/UnifiedPipelineModal';
 import PipelineProgressModal from '../components/PipelineProgressModal';
+import PipelineConfirmDialog from '../components/PipelineConfirmDialog';
 import { getVideos, processAudio, processTranscript, getAudioExtractionStatus, getTranscriptionStatus, startPipeline, getPipelineStatus, cancelPipeline } from '../services/api';
 
 const HomePage = () => {
@@ -29,6 +30,9 @@ const HomePage = () => {
   const [videoForPipeline, setVideoForPipeline] = useState(null);
   const [pipelineStatuses, setPipelineStatuses] = useState({});
   const [pipelineStatusPolling, setPipelineStatusPolling] = useState({});
+  // Confirmation dialog state
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmDialogConfig, setConfirmDialogConfig] = useState({});
 
   useEffect(() => {
     fetchVideos();
@@ -261,7 +265,23 @@ const HomePage = () => {
   // Pipeline handlers
   const handleProcessPipelineClick = (video) => {
     setVideoForPipeline(video);
-    setPipelineModalOpen(true);
+    
+    // Check if moments exist for this video
+    if (video.moments && video.moments.length > 0) {
+      // Show confirmation dialog
+      setConfirmDialogConfig({
+        title: 'Moments Already Exist',
+        message: `This video already has ${video.moments.length} moment(s). Do you want to regenerate them?`,
+        onConfirm: () => {
+          setConfirmDialogOpen(false);
+          setPipelineModalOpen(true);
+        }
+      });
+      setConfirmDialogOpen(true);
+    } else {
+      // No moments exist, proceed directly
+      setPipelineModalOpen(true);
+    }
   };
 
   const handleStartPipeline = async (config) => {
@@ -476,6 +496,14 @@ const HomePage = () => {
         }}
         videoId={videoForPipeline?.id}
         onCancel={handleCancelPipeline}
+      />
+
+      <PipelineConfirmDialog
+        open={confirmDialogOpen}
+        onClose={setConfirmDialogOpen}
+        onConfirm={confirmDialogConfig.onConfirm}
+        title={confirmDialogConfig.title}
+        message={confirmDialogConfig.message}
       />
 
       <Snackbar

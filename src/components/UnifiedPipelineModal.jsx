@@ -18,6 +18,7 @@ import {
   InputLabel,
   FormControlLabel,
   Switch,
+  Checkbox,
 } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 
@@ -43,6 +44,8 @@ const UnifiedPipelineModal = ({ open, onClose, onStart, video }) => {
   const [generationPrompt, setGenerationPrompt] = useState(DEFAULT_GENERATION_PROMPT);
   const [refinementPrompt, setRefinementPrompt] = useState(DEFAULT_REFINEMENT_PROMPT);
   const [useCustomPrompts, setUseCustomPrompts] = useState(false);
+  const [overrideExistingMoments, setOverrideExistingMoments] = useState(false);
+  const [overrideExistingRefinement, setOverrideExistingRefinement] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -59,6 +62,8 @@ const UnifiedPipelineModal = ({ open, onClose, onStart, video }) => {
       setGenerationPrompt(DEFAULT_GENERATION_PROMPT);
       setRefinementPrompt(DEFAULT_REFINEMENT_PROMPT);
       setUseCustomPrompts(false);
+      setOverrideExistingMoments(false);
+      setOverrideExistingRefinement(false);
       setErrors({});
     }
   }, [open]);
@@ -138,6 +143,8 @@ const UnifiedPipelineModal = ({ open, onClose, onStart, video }) => {
       include_video_refinement: includeVideoRefinement,
       generation_prompt: useCustomPrompts ? generationPrompt.trim() : null,
       refinement_prompt: useCustomPrompts ? refinementPrompt.trim() : null,
+      override_existing_moments: overrideExistingMoments,
+      override_existing_refinement: overrideExistingRefinement,
     };
 
     onStart(config);
@@ -255,6 +262,33 @@ const UnifiedPipelineModal = ({ open, onClose, onStart, video }) => {
                 }
                 label="Include Video in Refinement"
                 sx={{ mt: 1 }}
+              />
+            </Box>
+          </Box>
+
+          {/* Override Options */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>
+              Override Options
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={overrideExistingMoments}
+                    onChange={(e) => setOverrideExistingMoments(e.target.checked)}
+                  />
+                }
+                label="Regenerate moments even if they exist"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={overrideExistingRefinement}
+                    onChange={(e) => setOverrideExistingRefinement(e.target.checked)}
+                  />
+                }
+                label="Re-refine all moments (including already refined)"
               />
             </Box>
           </Box>
