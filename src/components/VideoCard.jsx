@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Card, CardMedia, CardContent, Typography, Box, Skeleton, IconButton } from '@mui/material';
-import { PlayCircleOutline, VolumeOff, TextFields } from '@mui/icons-material';
+import { PlayCircleOutline, VolumeOff, TextFields, RocketLaunch } from '@mui/icons-material';
 import { getThumbnailUrl, getBackendBaseUrl } from '../services/api';
+import PipelineStatusBadge from './PipelineStatusBadge';
 
-const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick }) => {
+const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick, onProcessPipelineClick, onPipelineStatusClick, pipelineStatus }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
@@ -33,6 +34,26 @@ const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick }) 
       onTranscriptIconClick(video);
     }
   };
+
+  const handleProcessPipelineClick = (e) => {
+    e.stopPropagation(); // Prevent card click
+    if (onProcessPipelineClick) {
+      onProcessPipelineClick(video);
+    }
+  };
+
+  const handlePipelineStatusClick = () => {
+    // Note: stopPropagation is already handled by PipelineStatusBadge
+    if (onPipelineStatusClick) {
+      onPipelineStatusClick(video);
+    }
+  };
+
+  const isPipelineRunning = pipelineStatus && (
+    pipelineStatus.status === 'processing' || 
+    pipelineStatus.status === 'queued' || 
+    pipelineStatus.status === 'pending'
+  );
 
   return (
     <Card
@@ -185,6 +206,38 @@ const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick }) 
           >
             <TextFields sx={{ fontSize: 20 }} />
           </IconButton>
+        )}
+        {/* Process All Pipeline Button */}
+        {!isPipelineRunning && (
+          <IconButton
+            onClick={handleProcessPipelineClick}
+            sx={{
+              position: 'absolute',
+              bottom: 8,
+              left: 8,
+              backgroundColor: 'rgba(25, 118, 210, 0.9)',
+              color: 'white',
+              padding: '6px',
+              '&:hover': {
+                backgroundColor: 'rgba(25, 118, 210, 1)',
+                transform: 'scale(1.1)',
+              },
+              transition: 'all 0.2s ease-in-out',
+              zIndex: 10,
+            }}
+            size="small"
+            title="Process All (Unified Pipeline)"
+          >
+            <RocketLaunch sx={{ fontSize: 20 }} />
+          </IconButton>
+        )}
+        {/* Pipeline Status Badge */}
+        {pipelineStatus && (
+          <PipelineStatusBadge
+            status={pipelineStatus.status}
+            currentStage={pipelineStatus.current_stage}
+            onClick={handlePipelineStatusClick}
+          />
         )}
       </Box>
       <CardContent
