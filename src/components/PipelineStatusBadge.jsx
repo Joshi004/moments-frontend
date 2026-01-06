@@ -36,6 +36,15 @@ const PipelineStatusBadge = ({ status, currentStage, onClick }) => {
     return null;
   }
 
+  // Determine if this is a historical run (no current stage and terminal status)
+  const isHistorical = !currentStage && 
+    (status === 'completed' || status === 'failed' || status === 'cancelled');
+
+  // Hide old successful runs but keep failures visible for user awareness
+  if (isHistorical && status === 'completed') {
+    return null;
+  }
+
   const getBadgeColor = () => {
     switch (status) {
       case 'completed':
