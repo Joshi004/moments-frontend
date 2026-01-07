@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Snackbar, Alert } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Container, Typography, Box, Snackbar, Alert, Button } from '@mui/material';
+import { Link as LinkIcon } from '@mui/icons-material';
 import VideoGrid from '../components/VideoGrid';
 import VideoPlayer from '../components/VideoPlayer';
 import ProcessAudioModal from '../components/ProcessAudioModal';
@@ -10,6 +12,7 @@ import PipelineConfirmDialog from '../components/PipelineConfirmDialog';
 import { getVideos, processAudio, processTranscript, getAudioExtractionStatus, getTranscriptionStatus, startPipeline, getPipelineStatus, cancelPipeline } from '../services/api';
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const [videos, setVideos] = useState([]);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -410,13 +413,22 @@ const HomePage = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom>
-          Video Moments
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Browse and manage your video collection
-        </Typography>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Box>
+          <Typography variant="h3" component="h1" gutterBottom>
+            Video Moments
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Browse and manage your video collection
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<LinkIcon />}
+          onClick={() => navigate('/url-generate')}
+        >
+          Generate from URL
+        </Button>
       </Box>
 
       {loading && (

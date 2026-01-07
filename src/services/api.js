@@ -267,6 +267,21 @@ export const getPipelineHistory = async (videoId) => {
   }
 };
 
+// URL-based moment generation
+export const generateMomentsFromUrl = async (videoUrl, forceDownload, config) => {
+  try {
+    const response = await api.post('/generate_moments', {
+      video_url: videoUrl,
+      force_download: forceDownload,
+      ...config
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error generating moments from URL:', error);
+    throw error;
+  }
+};
+
 export default api;
 
 

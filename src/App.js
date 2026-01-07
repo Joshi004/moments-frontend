@@ -1,6 +1,8 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import HomePage from './pages/HomePage';
+import URLGeneratePage from './pages/URLGeneratePage';
 
 const theme = createTheme({
   palette: {
@@ -43,7 +45,12 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <HomePage />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/url-generate" element={<URLGeneratePage />} />
+        </Routes>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }
