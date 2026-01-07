@@ -236,6 +236,22 @@ const PipelineProgressModal = ({ open, onClose, videoId, onCancel }) => {
                         </Alert>
                       </Box>
                     )}
+                    {stage.key === 'refinement' && stageData && stageData.progress && 
+                     stageData.progress.total && (
+                      <Box sx={{ pl: 2, py: 1 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          {stageData.progress.processed === stageData.progress.total
+                            ? `All ${stageData.progress.total} moments refined`
+                            : `Refining moment ${stageData.progress.processed} of ${stageData.progress.total}...`
+                          }
+                        </Typography>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={(stageData.progress.processed / stageData.progress.total) * 100}
+                          sx={{ height: 6, borderRadius: 1 }}
+                        />
+                      </Box>
+                    )}
                   </StepContent>
                 </Step>
               );
@@ -258,6 +274,7 @@ const PipelineProgressModal = ({ open, onClose, videoId, onCancel }) => {
 };
 
 export default PipelineProgressModal;
+
 
 
 
