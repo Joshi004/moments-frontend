@@ -7,13 +7,16 @@ import {
   Alert,
   Snackbar,
   Divider,
+  Chip,
 } from '@mui/material';
 import {
   CheckCircle,
   Refresh,
   ContentCopy,
+  HourglassEmpty,
 } from '@mui/icons-material';
 import MomentCard from './MomentCard';
+import RefinementBanner from './RefinementBanner';
 
 const formatDuration = (seconds) => {
   if (!seconds) return '';
@@ -23,8 +26,17 @@ const formatDuration = (seconds) => {
   return `${mins}m ${secs}s`;
 };
 
-const ResultsSection = ({ videoId, moments, totalDuration, onReset }) => {
+const ResultsSection = ({ 
+  videoId, 
+  requestId,
+  moments, 
+  totalDuration, 
+  refinementProgress,
+  isFullyComplete,
+  onReset 
+}) => {
   const [copiedAll, setCopiedAll] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
   const handleCopyAllJSON = () => {
     const json = JSON.stringify(moments, null, 2);
@@ -36,13 +48,25 @@ const ResultsSection = ({ videoId, moments, totalDuration, onReset }) => {
     setCopiedAll(false);
   };
 
+  const copyToClipboard = (text, type) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(type);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   return (
     <>
       <Paper elevation={1} sx={{ p: 3, mt: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <CheckCircle color="success" sx={{ fontSize: 32 }} />
+          {isFullyComplete ? (
+            <CheckCircle color="success" sx={{ fontSize: 32 }} />
+          ) : (
+            <HourglassEmpty color="primary" sx={{ fontSize: 32 }} />
+          )}
           <Box>
-            <Typography variant="h6">Pipeline Completed Successfully!</Typography>
+            <Typography variant="h6">
+              {isFullyComplete ? 'Pipeline Completed Successfully!' : 'Moments Generated!'}
+            </Typography>
             {totalDuration && (
               <Typography variant="body2" color="text.secondary">
                 Total Duration: {formatDuration(totalDuration)}
@@ -50,6 +74,29 @@ const ResultsSection = ({ videoId, moments, totalDuration, onReset }) => {
             )}
           </Box>
         </Box>
+
+        {/* Video ID and Request ID Display */}
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+          <Chip 
+            label={`Video: ${videoId}`}
+            icon={<ContentCopy />}
+            onClick={() => copyToClipboard(videoId, 'video')}
+            color={copiedId === 'video' ? 'success' : 'default'}
+            variant={copiedId === 'video' ? 'filled' : 'outlined'}
+          />
+          {requestId && (
+            <Chip
+              label={copiedId === 'request' ? 'Copied!' : 'Copy Request ID'}
+              icon={<ContentCopy />}
+              onClick={() => copyToClipboard(requestId, 'request')}
+              color={copiedId === 'request' ? 'success' : 'default'}
+              variant="outlined"
+            />
+          )}
+        </Box>
+
+        {/* Refinement Banner */}
+        <RefinementBanner progress={refinementProgress} isComplete={isFullyComplete} />
 
         <Divider sx={{ my: 2 }} />
 

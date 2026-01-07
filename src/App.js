@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import HomePage from './pages/HomePage';
 import URLGeneratePage from './pages/URLGeneratePage';
+import PipelineHistoryPage from './pages/PipelineHistoryPage';
 
 const theme = createTheme({
   palette: {
@@ -49,6 +50,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/url-generate" element={<URLGeneratePage />} />
+          <Route path="/pipeline-history" element={<PipelineHistoryPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

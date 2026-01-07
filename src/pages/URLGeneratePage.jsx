@@ -20,6 +20,7 @@ import {
   generateMomentsFromUrl,
   getMoments,
   cancelPipeline,
+  getPipelineStatus,
 } from '../services/api';
 
 const DEFAULT_CONFIG = {
@@ -43,7 +44,7 @@ const URLGeneratePage = () => {
 
   // Page state
   const [pageState, setPageState] = useState('idle');
-  // 'idle' | 'validating' | 'queued' | 'processing' | 'completed' | 'error'
+  // 'idle' | 'validating' | 'queued' | 'processing' | 'moments_ready' | 'completed' | 'error'
 
   // Pipeline state
   const [videoId, setVideoId] = useState(null);
@@ -53,28 +54,52 @@ const URLGeneratePage = () => {
   // Results state
   const [moments, setMoments] = useState([]);
   const [totalDuration, setTotalDuration] = useState(null);
+  const [refinementProgress, setRefinementProgress] = useState(null);
   const [error, setError] = useState(null);
   const [urlError, setUrlError] = useState(null);
 
-  // Poll for completion
+  // Poll for pipeline status and completion
   useEffect(() => {
-    if (pageState === 'processing' && videoId) {
-      // usePipelineStatus hook in ProgressSection handles the polling
-      // We just need to listen for completion via a different mechanism
-      // For now, we'll use a simple interval to check
+    if ((pageState === 'processing' || pageState === 'moments_ready') && videoId) {
       const pollInterval = setInterval(async () => {
         try {
-          const momentsData = await getMoments(videoId);
-          if (momentsData && momentsData.length > 0) {
-            // Pipeline likely completed, fetch moments
-            clearInterval(pollInterval);
+          const pipelineStatus = await getPipelineStatus(videoId);
+          
+          // Check if generation is complete (can show moments)
+          const generationComplete = pipelineStatus.stages?.generation?.status === 'completed';
+          
+          if (generationComplete && pageState === 'processing') {
+            const momentsData = await getMoments(videoId);
             setMoments(momentsData);
+            setRefinementProgress(pipelineStatus.stages?.refinement?.progress);
+            setPageState('moments_ready');
+          }
+          
+          // Check for full completion
+          if (pipelineStatus.status === 'completed') {
+            const momentsData = await getMoments(videoId);
+            setMoments(momentsData);
+            setTotalDuration(pipelineStatus.total_duration_seconds);
             setPageState('completed');
+            clearInterval(pollInterval);
+          }
+          
+          // Check for failure or cancellation
+          if (pipelineStatus.status === 'failed' || pipelineStatus.status === 'cancelled') {
+            setError(pipelineStatus.error_message || `Pipeline ${pipelineStatus.status}`);
+            setPageState('error');
+            clearInterval(pollInterval);
+          }
+          
+          // Update refinement progress if in moments_ready state
+          if (pageState === 'moments_ready') {
+            setRefinementProgress(pipelineStatus.stages?.refinement?.progress);
           }
         } catch (err) {
-          // Moments not ready yet, continue polling
+          console.error('Error polling pipeline status:', err);
+          // Continue polling on error
         }
-      }, 5000); // Poll every 5 seconds
+      }, 3000); // Poll every 3 seconds
 
       return () => clearInterval(pollInterval);
     }
@@ -128,6 +153,22 @@ const URLGeneratePage = () => {
       setRequestId(response.request_id);
       setIsCached(response.is_cached);
 
+      // Track in localStorage for history
+      try {
+        const recentVideos = JSON.parse(localStorage.getItem('recentPipelineVideos') || '[]');
+        const newEntry = {
+          video_id: response.video_id,
+          request_id: response.request_id,
+          timestamp: Date.now(),
+          url: url,
+        };
+        // Add to front and keep only last 20
+        const updated = [newEntry, ...recentVideos.filter(v => v.video_id !== response.video_id)].slice(0, 20);
+        localStorage.setItem('recentPipelineVideos', JSON.stringify(updated));
+      } catch (storageErr) {
+        console.error('Failed to store in localStorage:', storageErr);
+      }
+
       // Update page state
       if (response.download_required) {
         setPageState('processing'); // Will show download progress
@@ -165,12 +206,14 @@ const URLGeneratePage = () => {
     setIsCached(false);
     setMoments([]);
     setTotalDuration(null);
+    setRefinementProgress(null);
     setError(null);
     setUrlError(null);
   };
 
   const isProcessing = pageState === 'validating' || pageState === 'queued' || pageState === 'processing';
   const isIdle = pageState === 'idle';
+  const isMomentsReady = pageState === 'moments_ready';
   const isCompleted = pageState === 'completed';
   const isError = pageState === 'error';
 
@@ -265,11 +308,14 @@ const URLGeneratePage = () => {
       )}
 
       {/* Results Section */}
-      {isCompleted && (
+      {(isMomentsReady || isCompleted) && (
         <ResultsSection
           videoId={videoId}
+          requestId={requestId}
           moments={moments}
           totalDuration={totalDuration}
+          refinementProgress={refinementProgress}
+          isFullyComplete={isCompleted}
           onReset={handleReset}
         />
       )}

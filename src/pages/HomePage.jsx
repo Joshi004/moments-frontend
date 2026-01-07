@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Typography, Box, Snackbar, Alert, Button } from '@mui/material';
-import { Link as LinkIcon } from '@mui/icons-material';
+import { Link as LinkIcon, History } from '@mui/icons-material';
 import VideoGrid from '../components/VideoGrid';
 import VideoPlayer from '../components/VideoPlayer';
 import ProcessAudioModal from '../components/ProcessAudioModal';
@@ -422,13 +422,22 @@ const HomePage = () => {
             Browse and manage your video collection
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<LinkIcon />}
-          onClick={() => navigate('/url-generate')}
-        >
-          Generate from URL
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<History />}
+            onClick={() => navigate('/pipeline-history')}
+          >
+            Pipeline History
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<LinkIcon />}
+            onClick={() => navigate('/url-generate')}
+          >
+            Generate from URL
+          </Button>
+        </Box>
       </Box>
 
       {loading && (
