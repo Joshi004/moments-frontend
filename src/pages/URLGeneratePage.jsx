@@ -22,16 +22,20 @@ import {
   cancelPipeline,
   getPipelineStatus,
 } from '../services/api';
+import { DEFAULT_GENERATION_PROMPT } from '../constants/prompts';
 
 const DEFAULT_CONFIG = {
-  model: 'qwen3_vl_fp8',
-  temperature: 0.7,
+  generation_model: 'qwen3_vl_fp8',
+  refinement_model: 'qwen3_vl_fp8',
+  generation_temperature: 0.7,
+  refinement_temperature: 0.7,
   min_moment_length: 60,
   max_moment_length: 120,
   min_moments: 3,
   max_moments: 10,
   refinement_parallel_workers: 2,
   include_video_refinement: true,
+  generation_prompt: DEFAULT_GENERATION_PROMPT,
 };
 
 const URLGeneratePage = () => {

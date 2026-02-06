@@ -282,6 +282,135 @@ export const generateMomentsFromUrl = async (videoUrl, forceDownload, config) =>
   }
 };
 
+// Delete video and associated resources
+export const deleteVideo = async (videoId, options = {}) => {
+  try {
+    const params = new URLSearchParams();
+    
+    // Add granular skip parameters if specified
+    // Local file options
+    if (options.skipLocalVideo) {
+      params.append('skip_local_video', 'true');
+    }
+    if (options.skipLocalAudio) {
+      params.append('skip_local_audio', 'true');
+    }
+    if (options.skipLocalThumbnail) {
+      params.append('skip_local_thumbnail', 'true');
+    }
+    if (options.skipLocalTranscript) {
+      params.append('skip_local_transcript', 'true');
+    }
+    if (options.skipLocalMoments) {
+      params.append('skip_local_moments', 'true');
+    }
+    if (options.skipLocalClips) {
+      params.append('skip_local_clips', 'true');
+    }
+    
+    // GCS options
+    if (options.skipGcsAudio) {
+      params.append('skip_gcs_audio', 'true');
+    }
+    if (options.skipGcsClips) {
+      params.append('skip_gcs_clips', 'true');
+    }
+    
+    // State options
+    if (options.skipRedis) {
+      params.append('skip_redis', 'true');
+    }
+    if (options.skipRegistry) {
+      params.append('skip_registry', 'true');
+    }
+    
+    // Force option
+    if (options.force) {
+      params.append('force', 'true');
+    }
+    
+    const queryString = params.toString();
+    const url = `/videos/${videoId}${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await api.delete(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting video:', error);
+    throw error;
+  }
+};
+
+// Admin - Model Configuration
+export const getModelConfigs = async () => {
+  try {
+    const response = await api.get('/admin/models');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching model configs:', error);
+    throw error;
+  }
+};
+
+export const getModelConfig = async (modelKey) => {
+  try {
+    const response = await api.get(`/admin/models/${modelKey}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching model config:', error);
+    throw error;
+  }
+};
+
+export const createModelConfig = async (modelKey, config) => {
+  try {
+    const response = await api.post(`/admin/models/${modelKey}`, config);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating model config:', error);
+    throw error;
+  }
+};
+
+export const updateModelConfig = async (modelKey, config) => {
+  try {
+    const response = await api.patch(`/admin/models/${modelKey}`, config);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating model config:', error);
+    throw error;
+  }
+};
+
+export const deleteModelConfig = async (modelKey) => {
+  try {
+    const response = await api.delete(`/admin/models/${modelKey}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting model config:', error);
+    throw error;
+  }
+};
+
+export const seedModelConfigs = async (force = false) => {
+  try {
+    const response = await api.post('/admin/models/seed', { force });
+    return response.data;
+  } catch (error) {
+    console.error('Error seeding model configs:', error);
+    throw error;
+  }
+};
+
+export const getDefaultConfigs = async () => {
+  try {
+    const response = await api.get('/admin/models/defaults/all');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching default configs:', error);
+    throw error;
+  }
+};
+
 export default api;
 
 

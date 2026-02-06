@@ -9,7 +9,8 @@ import ProcessTranscriptModal from '../components/ProcessTranscriptModal';
 import UnifiedPipelineModal from '../components/UnifiedPipelineModal';
 import PipelineProgressModal from '../components/PipelineProgressModal';
 import PipelineConfirmDialog from '../components/PipelineConfirmDialog';
-import { getVideos, processAudio, processTranscript, getAudioExtractionStatus, getTranscriptionStatus, startPipeline, getPipelineStatus, cancelPipeline } from '../services/api';
+import DeleteVideoModal from '../components/DeleteVideoModal';
+import { getVideos, processAudio, processTranscript, getAudioExtractionStatus, getTranscriptionStatus, startPipeline, getPipelineStatus, cancelPipeline, deleteVideo } from '../services/api';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -36,6 +37,10 @@ const HomePage = () => {
   // Confirmation dialog state
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmDialogConfig, setConfirmDialogConfig] = useState({});
+  // Delete modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchVideos();
@@ -411,6 +416,52 @@ const HomePage = () => {
     }
   };
 
+  // Delete handlers
+  const handleDeleteClick = (video) => {
+    setVideoToDelete(video);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteVideo = async (videoId, options) => {
+    try {
+      setIsDeleting(true);
+      setSnackbar({ open: false, message: '', severity: 'info' });
+
+      const result = await deleteVideo(videoId, options);
+
+      setDeleteModalOpen(false);
+      setVideoToDelete(null);
+      setIsDeleting(false);
+
+      // Refresh video list
+      await fetchVideos();
+
+      const statusMessage = result.status === 'completed' 
+        ? 'Video deleted successfully!' 
+        : `Video partially deleted: ${result.errors?.join(', ') || 'Some resources could not be deleted'}`;
+
+      setSnackbar({
+        open: true,
+        message: statusMessage,
+        severity: result.status === 'completed' ? 'success' : 'warning',
+      });
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      setIsDeleting(false);
+      
+      const errorMessage = error.response?.data?.detail?.error 
+        || error.response?.data?.detail 
+        || error.message 
+        || 'Failed to delete video. Please try again.';
+      
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
+  };
+
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -474,6 +525,7 @@ const HomePage = () => {
           onTranscriptIconClick={handleTranscriptIconClick}
           onProcessPipelineClick={handleProcessPipelineClick}
           onPipelineStatusClick={handlePipelineStatusClick}
+          onDeleteClick={handleDeleteClick}
           pipelineStatuses={pipelineStatuses}
         />
       )}
@@ -525,6 +577,17 @@ const HomePage = () => {
         onConfirm={confirmDialogConfig.onConfirm}
         title={confirmDialogConfig.title}
         message={confirmDialogConfig.message}
+      />
+
+      <DeleteVideoModal
+        open={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setVideoToDelete(null);
+        }}
+        video={videoToDelete}
+        onDelete={handleDeleteVideo}
+        isDeleting={isDeleting}
       />
 
       <Snackbar

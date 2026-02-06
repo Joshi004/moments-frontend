@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Card, CardMedia, CardContent, Typography, Box, Skeleton, IconButton } from '@mui/material';
-import { PlayCircleOutline, VolumeOff, TextFields, RocketLaunch } from '@mui/icons-material';
+import { PlayCircleOutline, VolumeOff, TextFields, RocketLaunch, Delete } from '@mui/icons-material';
 import { getThumbnailUrl, getBackendBaseUrl } from '../services/api';
 import PipelineStatusBadge from './PipelineStatusBadge';
 
-const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick, onProcessPipelineClick, onPipelineStatusClick, pipelineStatus }) => {
+const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick, onProcessPipelineClick, onPipelineStatusClick, onDeleteClick, pipelineStatus }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
@@ -46,6 +46,13 @@ const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick, on
     // Note: stopPropagation is already handled by PipelineStatusBadge
     if (onPipelineStatusClick) {
       onPipelineStatusClick(video);
+    }
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation(); // Prevent card click
+    if (onDeleteClick) {
+      onDeleteClick(video);
     }
   };
 
@@ -165,6 +172,28 @@ const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick, on
             }}
           />
         </Box>
+        {/* Delete button */}
+        <IconButton
+          onClick={handleDeleteClick}
+          sx={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            backgroundColor: 'rgba(211, 47, 47, 0.8)',
+            color: 'white',
+            padding: '4px',
+            '&:hover': {
+              backgroundColor: 'rgba(211, 47, 47, 1)',
+              transform: 'scale(1.1)',
+            },
+            transition: 'all 0.2s ease-in-out',
+            zIndex: 10,
+          }}
+          size="small"
+          title="Delete video"
+        >
+          <Delete sx={{ fontSize: 20 }} />
+        </IconButton>
         {/* Missing audio icon */}
         {video.has_audio === false && (
           <IconButton

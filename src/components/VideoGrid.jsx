@@ -2,7 +2,7 @@ import React from 'react';
 import { Grid, Box, Typography } from '@mui/material';
 import VideoCard from './VideoCard';
 
-const VideoGrid = ({ videos, onVideoClick, onAudioIconClick, onTranscriptIconClick, onProcessPipelineClick, onPipelineStatusClick, pipelineStatuses }) => {
+const VideoGrid = ({ videos, onVideoClick, onAudioIconClick, onTranscriptIconClick, onProcessPipelineClick, onPipelineStatusClick, onDeleteClick, pipelineStatuses }) => {
   if (!videos || videos.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -33,6 +33,7 @@ const VideoGrid = ({ videos, onVideoClick, onAudioIconClick, onTranscriptIconCli
           onTranscriptIconClick={onTranscriptIconClick}
           onProcessPipelineClick={onProcessPipelineClick}
           onPipelineStatusClick={onPipelineStatusClick}
+          onDeleteClick={onDeleteClick}
           pipelineStatus={pipelineStatuses?.[video.id]}
         />
       ))}

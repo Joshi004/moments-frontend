@@ -30,14 +30,7 @@ import {
   Refresh,
 } from '@mui/icons-material';
 import { getPipelineStatus, getPipelineHistory } from '../services/api';
-
-const formatDuration = (seconds) => {
-  if (!seconds) return '';
-  if (seconds < 60) return `${seconds.toFixed(1)}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}m ${secs}s`;
-};
+import { formatDuration } from '../utils/pipelineHelpers';
 
 const formatTimestamp = (timestamp) => {
   if (!timestamp) return 'Unknown';

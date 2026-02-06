@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import HomePage from './pages/HomePage';
 import URLGeneratePage from './pages/URLGeneratePage';
 import PipelineHistoryPage from './pages/PipelineHistoryPage';
+import AdminPage from './pages/AdminPage';
 
 const theme = createTheme({
   palette: {
@@ -51,6 +52,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/url-generate" element={<URLGeneratePage />} />
           <Route path="/pipeline-history" element={<PipelineHistoryPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

@@ -17,14 +17,7 @@ import {
 } from '@mui/icons-material';
 import MomentCard from './MomentCard';
 import RefinementBanner from './RefinementBanner';
-
-const formatDuration = (seconds) => {
-  if (!seconds) return '';
-  if (seconds < 60) return `${seconds.toFixed(1)}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}m ${secs}s`;
-};
+import { formatDuration } from '../../utils/pipelineHelpers';
 
 const ResultsSection = ({ 
   videoId, 

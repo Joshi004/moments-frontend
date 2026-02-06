@@ -231,8 +231,8 @@ const MomentConfigDrawer = ({ open, onClose, config, momentTitle }) => {
             </>
           )}
 
-          {/* User Prompt */}
-          {user_prompt && (
+          {/* User Prompt - Hide for refinement moments */}
+          {user_prompt && !isRefinement && (
             <Box sx={{ mb: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5, fontSize: '0.9rem' }}>
                 User Prompt

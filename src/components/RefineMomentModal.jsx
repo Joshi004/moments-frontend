@@ -25,17 +25,6 @@ import {
 import { ExpandMore, Videocam, VideocamOff } from '@mui/icons-material';
 import { checkVideoAvailability } from '../services/api';
 
-const DEFAULT_PROMPT = `Before refining the timestamps, let's define what a moment is: A moment is a segment of a video (with its corresponding transcript) that represents something engaging, meaningful, or valuable to the viewer. A moment should be a complete, coherent thought or concept that makes sense on its own.
-
-Now, analyze the word-level transcript and identify the precise start and end timestamps for this moment. The current timestamps may be slightly off. Find the exact point where this topic/segment naturally begins and ends.
-
-Guidelines:
-- Start the moment at the first word that introduces the topic or begins the engaging segment
-- End the moment at the last word that concludes the thought or completes the concept
-- Be precise with word boundaries
-- Ensure the moment captures complete sentences or phrases
-- The refined moment should represent a coherent, engaging segment that makes complete sense on its own`;
-
 const formatTime = (seconds) => {
   if (isNaN(seconds)) return '0:00';
   const hours = Math.floor(seconds / 3600);
@@ -52,7 +41,6 @@ const formatTime = (seconds) => {
 const VIDEO_SUPPORTED_MODEL = 'qwen3_vl_fp8';
 
 const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining, videoId }) => {
-  const [userPrompt, setUserPrompt] = useState(DEFAULT_PROMPT);
   const [model, setModel] = useState('qwen3_vl_fp8');
   const [temperature, setTemperature] = useState(0.7);
   const [errors, setErrors] = useState({});
@@ -99,7 +87,6 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining, videoI
   // Reset form when modal opens/closes
   useEffect(() => {
     if (open) {
-      setUserPrompt(DEFAULT_PROMPT);
       setModel('qwen3_vl_fp8');
       setTemperature(0.7);
       setErrors({});
@@ -117,11 +104,6 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining, videoI
 
   const validate = () => {
     const newErrors = {};
-
-    // Validate prompt
-    if (!userPrompt.trim()) {
-      newErrors.userPrompt = 'Prompt cannot be empty';
-    }
 
     // Validate temperature
     const temp = parseFloat(temperature);
@@ -146,7 +128,6 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining, videoI
     }
 
     const config = {
-      user_prompt: userPrompt.trim(),
       model: model,
       temperature: parseFloat(temperature),
       include_video: includeVideo && model === VIDEO_SUPPORTED_MODEL,
@@ -157,7 +138,6 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining, videoI
 
   const handleClose = () => {
     if (!isRefining) {
-      setUserPrompt(DEFAULT_PROMPT);
       setModel('qwen3_vl_fp8');
       setTemperature(0.7);
       setErrors({});
@@ -236,30 +216,16 @@ const RefineMomentModal = ({ open, onClose, onRefine, moment, isRefining, videoI
             </Box>
           </Box>
 
-          {/* Prompt Editor Section */}
-          <Box>
+          {/* About Refinement */}
+          <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Refinement Prompt (Editable)
+              About Refinement
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-              This prompt guides the AI in finding precise timestamps. The system will automatically add context about the moment and word-level transcript format. Padding is configured in the backend (30 seconds on each side).
+            <Typography variant="body2" color="text.secondary">
+              Refinement uses AI to analyze the word-level transcript and identify precise timestamps
+              for this moment. The system automatically adds context about the moment and uses
+              a backend-configured prompt to ensure consistent, high-quality results.
             </Typography>
-            <TextField
-              multiline
-              rows={8}
-              value={userPrompt}
-              onChange={(e) => setUserPrompt(e.target.value)}
-              error={!!errors.userPrompt}
-              helperText={errors.userPrompt || 'Customize how the AI should refine this moment'}
-              fullWidth
-              disabled={isRefining}
-              sx={{
-                '& .MuiInputBase-root': {
-                  fontFamily: 'monospace',
-                  fontSize: '0.875rem',
-                },
-              }}
-            />
           </Box>
 
           {/* Model and Temperature Controls */}

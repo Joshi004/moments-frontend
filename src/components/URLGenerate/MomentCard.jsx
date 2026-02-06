@@ -15,18 +15,12 @@ import {
   ContentCopy,
   CheckCircle,
 } from '@mui/icons-material';
+import { formatDuration } from '../../utils/pipelineHelpers';
 
 const formatTimestamp = (seconds) => {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
-};
-
-const formatDuration = (seconds) => {
-  if (seconds < 60) return `${Math.floor(seconds)}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}m ${secs}s`;
 };
 
 const MomentCard = ({ moment, index }) => {

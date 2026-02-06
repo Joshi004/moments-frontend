@@ -19,17 +19,10 @@ import {
   InputLabel,
 } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
-
-const DEFAULT_PROMPT = `Analyze the following video transcript and identify the most important, engaging, or valuable moments. Each moment should represent a distinct topic, insight, or highlight that would be meaningful to viewers.
-
-Generate moments that:
-- Capture key insights, turning points, or memorable segments
-- Have clear, descriptive titles (5-15 words)
-- Represent complete thoughts or concepts
-- Are non-overlapping and well-spaced throughout the video`;
+import { DEFAULT_GENERATION_PROMPT } from '../constants/prompts';
 
 const GenerateMomentsModal = ({ open, onClose, onGenerate, video, isGenerating }) => {
-  const [userPrompt, setUserPrompt] = useState(DEFAULT_PROMPT);
+  const [userPrompt, setUserPrompt] = useState(DEFAULT_GENERATION_PROMPT);
   const [minMomentLength, setMinMomentLength] = useState(60);
   const [maxMomentLength, setMaxMomentLength] = useState(600);
   const [minMoments, setMinMoments] = useState(1);
@@ -42,7 +35,7 @@ const GenerateMomentsModal = ({ open, onClose, onGenerate, video, isGenerating }
   // Reset form when modal opens/closes
   useEffect(() => {
     if (open) {
-      setUserPrompt(DEFAULT_PROMPT);
+      setUserPrompt(DEFAULT_GENERATION_PROMPT);
       setMinMomentLength(60);
       setMaxMomentLength(600);
       setMinMoments(1);
@@ -131,7 +124,7 @@ const GenerateMomentsModal = ({ open, onClose, onGenerate, video, isGenerating }
 
   const handleClose = () => {
     if (!isGenerating) {
-      setUserPrompt(DEFAULT_PROMPT);
+      setUserPrompt(DEFAULT_GENERATION_PROMPT);
       setMinMomentLength(60);
       setMaxMomentLength(600);
       setMinMoments(1);
