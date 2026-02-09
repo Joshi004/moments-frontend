@@ -46,7 +46,16 @@ const Breadcrumbs = () => {
       {pathnames.map((segment, index) => {
         const path = `/${pathnames.slice(0, index + 1).join('/')}`;
         const isLast = index === pathnames.length - 1;
-        const label = ROUTE_LABELS[segment] || titleCase(segment);
+        const previousSegment = index > 0 ? pathnames[index - 1] : null;
+        
+        // Special handling for video detail pages (/videos/:id)
+        let label;
+        if (previousSegment === 'videos' && !ROUTE_LABELS[segment]) {
+          // This is a video ID, show "Video Detail"
+          label = 'Video Detail';
+        } else {
+          label = ROUTE_LABELS[segment] || titleCase(segment);
+        }
 
         if (isLast) {
           return (

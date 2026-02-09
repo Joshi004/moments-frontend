@@ -8,7 +8,6 @@ import EmptyState from './common/EmptyState';
 const VideoGrid = ({ 
   videos, 
   viewMode = 'grid',
-  onVideoClick, 
   onAudioIconClick, 
   onTranscriptIconClick, 
   onProcessPipelineClick, 
@@ -33,8 +32,7 @@ const VideoGrid = ({
         {videos.map((video) => (
           <VideoListItem
             key={video.id}
-            video={video} 
-            onClick={() => onVideoClick(video)} 
+            video={video}
             onAudioIconClick={onAudioIconClick}
             onTranscriptIconClick={onTranscriptIconClick}
             onProcessPipelineClick={onProcessPipelineClick}
@@ -60,8 +58,7 @@ const VideoGrid = ({
       {videos.map((video) => (
         <VideoCard 
           key={video.id}
-          video={video} 
-          onClick={() => onVideoClick(video)} 
+          video={video}
           onAudioIconClick={onAudioIconClick}
           onTranscriptIconClick={onTranscriptIconClick}
           onProcessPipelineClick={onProcessPipelineClick}

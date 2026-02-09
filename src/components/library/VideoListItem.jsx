@@ -10,8 +10,7 @@ import { formatDuration } from '../../utils/formatters';
  * VideoListItem component - horizontal list view for videos
  */
 function VideoListItem({ 
-  video, 
-  onClick, 
+  video,
   onAudioIconClick, 
   onTranscriptIconClick, 
   onProcessPipelineClick, 
@@ -80,7 +79,7 @@ function VideoListItem({
 
   return (
     <Paper
-      onClick={onClick}
+      onClick={() => navigate(`/videos/${video.id}`)}
       sx={{
         display: 'flex',
         alignItems: 'center',

@@ -1,30 +1,18 @@
 import React, { useRef, useEffect, useState } from 'react';
-import {
-  Box,
-  IconButton,
-  Typography,
-  Paper,
-  Divider,
-  Button,
-  Snackbar,
-  Alert,
-} from '@mui/material';
-import { Close, Add, AutoAwesome } from '@mui/icons-material';
+import { Box } from '@mui/material';
 import VideoControls from './VideoControls';
 import VideoCaptions from './VideoCaptions';
-import AddMomentDialog from './AddMomentDialog';
-import GenerateMomentsModal from './GenerateMomentsModal';
-import RefineMomentModal from './RefineMomentModal';
-import ExtractClipsModal from './ExtractClipsModal';
-import MomentsList from './MomentsList';
-import { getVideoStreamUrl, getMoments, addMoment, getTranscript, generateMoments, getGenerationStatus, refineMoment, getRefinementStatus, extractClips, getClipExtractionStatus, getAudioExtractionStatus, getTranscriptionStatus } from '../services/api';
+import { getVideoStreamUrl } from '../services/api';
 
 const VideoPlayer = ({
   video,
-  videos,
-  onClose,
+  moments = [],
+  transcript = null,
+  onTimeUpdate,
   onPrevious,
   onNext,
+  hasPrevious = false,
+  hasNext = false,
 }) => {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
@@ -33,38 +21,9 @@ const VideoPlayer = ({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(100);
   const [isMuted, setIsMuted] = useState(false);
-  const [moments, setMoments] = useState([]);
-  const [isAddMomentDialogOpen, setIsAddMomentDialogOpen] = useState(false);
-  const [isGenerateMomentsModalOpen, setIsGenerateMomentsModalOpen] = useState(false);
-  const [isGeneratingMoments, setIsGeneratingMoments] = useState(false);
-  const [generationStatus, setGenerationStatus] = useState(null);
-  const [generationPollInterval, setGenerationPollInterval] = useState(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [transcript, setTranscript] = useState(null);
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [currentCaptionText, setCurrentCaptionText] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isRefineMomentModalOpen, setIsRefineMomentModalOpen] = useState(false);
-  const [momentToRefine, setMomentToRefine] = useState(null);
-  const [isRefiningMoment, setIsRefiningMoment] = useState(false);
-  const [refinementStatus, setRefinementStatus] = useState(null);
-  const [refinementPollInterval, setRefinementPollInterval] = useState(null);
-  const [isExtractClipsModalOpen, setIsExtractClipsModalOpen] = useState(false);
-  const [isExtractingClips, setIsExtractingClips] = useState(false);
-  const [extractionStatus, setExtractionStatus] = useState(null);
-  const [extractionPollInterval, setExtractionPollInterval] = useState(null);
-  // Audio extraction state
-  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
-  const [audioExtractionStatus, setAudioExtractionStatus] = useState(null);
-  const [audioExtractionPollInterval, setAudioExtractionPollInterval] = useState(null);
-  // Transcription state
-  const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
-  const [transcriptionStatus, setTranscriptionStatus] = useState(null);
-  const [transcriptionPollInterval, setTranscriptionPollInterval] = useState(null);
-
-  const currentIndex = videos.findIndex((v) => v.id === video?.id);
-  const hasPrevious = currentIndex > 0;
-  const hasNext = currentIndex < videos.length - 1;
 
   useEffect(() => {
     if (video) {
@@ -74,191 +33,11 @@ const VideoPlayer = ({
         videoElement.volume = volume / 100;
         videoElement.muted = isMuted;
       }
-      // Fetch moments when video changes
-      fetchMoments();
-      // Fetch transcript when video changes
-      fetchTranscript();
       // Reset captions when video changes
       setCaptionsEnabled(false);
       setCurrentCaptionText('');
-      // Reset generation state
-      setIsGeneratingMoments(false);
-      setGenerationStatus(null);
-      // Reset refinement state
-      setIsRefiningMoment(false);
-      setRefinementStatus(null);
-      setMomentToRefine(null);
-      setIsRefineMomentModalOpen(false);
-      // Reset extraction state
-      setIsExtractingClips(false);
-      setExtractionStatus(null);
-      setIsExtractClipsModalOpen(false);
-      // Reset audio extraction state
-      setIsProcessingAudio(false);
-      setAudioExtractionStatus(null);
-      // Reset transcription state
-      setIsProcessingTranscript(false);
-      setTranscriptionStatus(null);
-      // Stop any existing polling
-      if (generationPollInterval) {
-        clearInterval(generationPollInterval);
-        setGenerationPollInterval(null);
-      }
-      if (refinementPollInterval) {
-        clearInterval(refinementPollInterval);
-        setRefinementPollInterval(null);
-      }
-      if (extractionPollInterval) {
-        clearInterval(extractionPollInterval);
-        setExtractionPollInterval(null);
-      }
-      if (audioExtractionPollInterval) {
-        clearInterval(audioExtractionPollInterval);
-        setAudioExtractionPollInterval(null);
-      }
-      if (transcriptionPollInterval) {
-        clearInterval(transcriptionPollInterval);
-        setTranscriptionPollInterval(null);
-      }
     }
   }, [video, volume, isMuted]);
-
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (generationPollInterval) {
-        clearInterval(generationPollInterval);
-      }
-      if (refinementPollInterval) {
-        clearInterval(refinementPollInterval);
-      }
-      if (extractionPollInterval) {
-        clearInterval(extractionPollInterval);
-      }
-      if (audioExtractionPollInterval) {
-        clearInterval(audioExtractionPollInterval);
-      }
-      if (transcriptionPollInterval) {
-        clearInterval(transcriptionPollInterval);
-      }
-    };
-  }, [generationPollInterval, refinementPollInterval, extractionPollInterval, audioExtractionPollInterval, transcriptionPollInterval]);
-
-  const fetchMoments = async () => {
-    if (!video) return;
-    try {
-      const momentsData = await getMoments(video.id);
-      setMoments(momentsData);
-    } catch (error) {
-      console.error('Error fetching moments:', error);
-      setMoments([]);
-    }
-  };
-
-  const fetchTranscript = async () => {
-    if (!video) return;
-    try {
-      const transcriptData = await getTranscript(video.id);
-      setTranscript(transcriptData);
-    } catch (error) {
-      console.error('Error fetching transcript:', error);
-      setTranscript(null);
-    }
-  };
-
-  const handleAddMoment = async (moment) => {
-    if (!video) return;
-    try {
-      await addMoment(video.id, moment);
-      // Refresh moments after successful addition
-      await fetchMoments();
-    } catch (error) {
-      throw error; // Re-throw to let dialog handle error display
-    }
-  };
-
-  const handleGenerateMoments = async (config) => {
-    if (!video) return;
-    
-    try {
-      setIsGeneratingMoments(true);
-      setSnackbar({ open: false, message: '', severity: 'info' });
-      
-      // Start generation
-      await generateMoments(video.id, config);
-      
-      // Start polling for status
-      const pollInterval = setInterval(async () => {
-        try {
-          const status = await getGenerationStatus(video.id);
-          setGenerationStatus(status);
-          
-          if (status && status.status === 'completed') {
-            // Generation completed
-            clearInterval(pollInterval);
-            setGenerationPollInterval(null);
-            setIsGeneratingMoments(false);
-            setIsGenerateMomentsModalOpen(false);
-            
-            // Refresh moments
-            await fetchMoments();
-            
-            setSnackbar({
-              open: true,
-              message: 'Moments generated successfully!',
-              severity: 'success',
-            });
-          } else if (status && status.status === 'failed') {
-            // Generation failed
-            clearInterval(pollInterval);
-            setGenerationPollInterval(null);
-            setIsGeneratingMoments(false);
-            
-            setSnackbar({
-              open: true,
-              message: 'Moment generation failed. Please try again.',
-              severity: 'error',
-            });
-          }
-        } catch (error) {
-          console.error('Error polling generation status:', error);
-          // Continue polling on error
-        }
-      }, 2000); // Poll every 2 seconds
-      
-      setGenerationPollInterval(pollInterval);
-      
-      // Set timeout to stop polling after 5 minutes
-      setTimeout(() => {
-        if (pollInterval) {
-          clearInterval(pollInterval);
-          setGenerationPollInterval(null);
-          if (isGeneratingMoments) {
-            setIsGeneratingMoments(false);
-            setSnackbar({
-              open: true,
-              message: 'Generation timeout. Please check the status.',
-              severity: 'warning',
-            });
-          }
-        }
-      }, 5 * 60 * 1000); // 5 minutes
-      
-    } catch (error) {
-      console.error('Error generating moments:', error);
-      setIsGeneratingMoments(false);
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start moment generation. Please try again.';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
-    }
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -266,7 +45,12 @@ const VideoPlayer = ({
 
     const updateTime = () => {
       if (videoElement) {
-        setCurrentTime(videoElement.currentTime);
+        const time = videoElement.currentTime;
+        setCurrentTime(time);
+        // Notify parent of time update
+        if (onTimeUpdate) {
+          onTimeUpdate(time);
+        }
       }
     };
     
@@ -313,22 +97,18 @@ const VideoPlayer = ({
       videoElement.removeEventListener('pause', handlePause);
       videoElement.removeEventListener('ended', handleEnded);
     };
-  }, [video]); // Re-attach listeners when video changes
+  }, [video, onTimeUpdate]);
 
   const handlePlayPause = () => {
     const videoElement = videoRef.current;
     if (!videoElement) return;
 
-    // Update state immediately based on current paused state
-    // This ensures the icon updates synchronously before the video action
     const willBePlaying = videoElement.paused;
     setIsPlaying(willBePlaying);
 
-    // Then perform the play/pause action
     if (willBePlaying) {
       videoElement.play().catch((error) => {
         console.error('Error playing video:', error);
-        // Revert state if play fails
         setIsPlaying(false);
       });
     } else {
@@ -346,7 +126,6 @@ const VideoPlayer = ({
                                   document.msFullscreenElement;
 
     if (isCurrentlyFullscreen) {
-      // Exit fullscreen
       if (document.exitFullscreen) {
         document.exitFullscreen();
       } else if (document.webkitExitFullscreen) {
@@ -358,7 +137,6 @@ const VideoPlayer = ({
       }
       setIsFullscreen(false);
     } else {
-      // Enter fullscreen on container (includes video, controls, and captions)
       if (containerElement.requestFullscreen) {
         containerElement.requestFullscreen();
       } else if (containerElement.webkitRequestFullscreen) {
@@ -376,11 +154,6 @@ const VideoPlayer = ({
   useEffect(() => {
     const handleFullscreenChange = () => {
       const containerElement = containerRef.current;
-      const isCurrentlyFullscreen = document.fullscreenElement || 
-                                    document.webkitFullscreenElement || 
-                                    document.mozFullScreenElement || 
-                                    document.msFullscreenElement;
-      // Check if our container is the fullscreen element
       const isContainerFullscreen = containerElement && (
         document.fullscreenElement === containerElement ||
         document.webkitFullscreenElement === containerElement ||
@@ -416,38 +189,28 @@ const VideoPlayer = ({
 
     const segments = transcript.segment_timestamps;
     
-    // Find the segment that contains the current time
-    // A segment is active if currentTime is between start (inclusive) and end (exclusive)
-    // For the last segment, we include the end time to handle edge cases
     let activeSegment = null;
     
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i];
       const isLastSegment = i === segments.length - 1;
       
-      // Check if current time falls within this segment's time range
       if (currentTime >= segment.start && (isLastSegment ? currentTime <= segment.end : currentTime < segment.end)) {
         activeSegment = segment;
         break;
       }
     }
     
-    // If no active segment found and we're before the first segment, show nothing
-    // If we're after the last segment, show the last segment briefly, then clear
     if (!activeSegment) {
-      // Check if we're past all segments
       const lastSegment = segments[segments.length - 1];
       if (currentTime >= lastSegment.end) {
-        // Past the end - clear captions
         setCurrentCaptionText('');
         return;
       }
-      // Before first segment - show nothing
       setCurrentCaptionText('');
       return;
     }
     
-    // Display the active segment's text
     setCurrentCaptionText(activeSegment.text || '');
   }, [currentTime, captionsEnabled, transcript]);
 
@@ -456,13 +219,13 @@ const VideoPlayer = ({
     const handleKeyPress = (e) => {
       if (!video) return;
 
-      // Disable keyboard shortcuts when modals are open
-      if (isAddMomentDialogOpen || isGenerateMomentsModalOpen || isRefineMomentModalOpen || isExtractClipsModalOpen) {
-        return;
-      }
-
       const videoElement = videoRef.current;
       if (!videoElement) return;
+
+      // Don't interfere with input fields
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
 
       switch (e.code) {
         case 'Space':
@@ -499,12 +262,11 @@ const VideoPlayer = ({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [video, volume, duration, isAddMomentDialogOpen, isGenerateMomentsModalOpen, isRefineMomentModalOpen, isExtractClipsModalOpen]);
+  }, [video, volume, duration]);
 
   const handleSeek = (value) => {
     const videoElement = videoRef.current;
     if (videoElement) {
-      // Clamp the value to valid range
       const clampedValue = Math.max(0, Math.min(value, duration || 0));
       videoElement.currentTime = clampedValue;
       setCurrentTime(clampedValue);
@@ -532,391 +294,79 @@ const VideoPlayer = ({
     }
   };
 
-  const handlePrevious = () => {
-    if (hasPrevious && onPrevious) {
-      onPrevious(videos[currentIndex - 1]);
-    }
-  };
-
-  const handleNext = () => {
-    if (hasNext && onNext) {
-      onNext(videos[currentIndex + 1]);
-    }
-  };
-
-  const handleMomentClick = (startTime) => {
-    const videoElement = videoRef.current;
-    if (videoElement) {
-      videoElement.currentTime = startTime;
-      setCurrentTime(startTime);
-      // Optionally auto-play when clicking on a moment
-      // videoElement.play();
-    }
-  };
-
-  const handleRefineClick = (moment) => {
-    setMomentToRefine(moment);
-    setIsRefineMomentModalOpen(true);
-  };
-
-  const handleRefineMoment = async (config) => {
-    if (!video || !momentToRefine) return;
-    
-    try {
-      setIsRefiningMoment(true);
-      setSnackbar({ open: false, message: '', severity: 'info' });
-      
-      // Start refinement
-      await refineMoment(video.id, momentToRefine.id, config);
-      
-      // Start polling for status
-      const pollInterval = setInterval(async () => {
-        try {
-          const status = await getRefinementStatus(video.id, momentToRefine.id);
-          setRefinementStatus(status);
-          
-          if (status && status.status === 'completed') {
-            // Refinement completed
-            clearInterval(pollInterval);
-            setRefinementPollInterval(null);
-            setIsRefiningMoment(false);
-            setIsRefineMomentModalOpen(false);
-            setMomentToRefine(null);
-            
-            // Refresh moments
-            await fetchMoments();
-            
-            setSnackbar({
-              open: true,
-              message: 'Moment refined successfully!',
-              severity: 'success',
-            });
-          } else if (status && status.status === 'failed') {
-            // Refinement failed
-            clearInterval(pollInterval);
-            setRefinementPollInterval(null);
-            setIsRefiningMoment(false);
-            
-            setSnackbar({
-              open: true,
-              message: 'Moment refinement failed. Please try again.',
-              severity: 'error',
-            });
-          }
-        } catch (error) {
-          console.error('Error polling refinement status:', error);
-          // Continue polling on error
-        }
-      }, 2000); // Poll every 2 seconds
-      
-      setRefinementPollInterval(pollInterval);
-      
-      // Set timeout to stop polling after 5 minutes
-      setTimeout(() => {
-        if (pollInterval) {
-          clearInterval(pollInterval);
-          setRefinementPollInterval(null);
-          if (isRefiningMoment) {
-            setIsRefiningMoment(false);
-            setSnackbar({
-              open: true,
-              message: 'Refinement timeout. Please check the status.',
-              severity: 'warning',
-            });
-          }
-        }
-      }, 5 * 60 * 1000); // 5 minutes
-      
-    } catch (error) {
-      console.error('Error refining moment:', error);
-      setIsRefiningMoment(false);
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start moment refinement. Please try again.';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
-    }
-  };
-
-  const handleExtractClipsClick = () => {
-    setIsExtractClipsModalOpen(true);
-  };
-
-  const handleExtractClips = async (config) => {
-    if (!video) return;
-    
-    try {
-      setIsExtractingClips(true);
-      setSnackbar({ open: false, message: '', severity: 'info' });
-      
-      // Start extraction
-      await extractClips(video.id, config);
-      
-      // Start polling for status
-      const pollInterval = setInterval(async () => {
-        try {
-          const status = await getClipExtractionStatus(video.id);
-          setExtractionStatus(status);
-          
-          if (status && status.status === 'completed') {
-            // Extraction completed
-            clearInterval(pollInterval);
-            setExtractionPollInterval(null);
-            setIsExtractingClips(false);
-            setIsExtractClipsModalOpen(false);
-            
-            const successMsg = status.processed_moments 
-              ? `Successfully extracted ${status.processed_moments - status.failed_moments} clips (${status.failed_moments} failed)`
-              : 'Clips extracted successfully!';
-            
-            setSnackbar({
-              open: true,
-              message: successMsg,
-              severity: 'success',
-            });
-          } else if (status && status.status === 'failed') {
-            // Extraction failed
-            clearInterval(pollInterval);
-            setExtractionPollInterval(null);
-            setIsExtractingClips(false);
-            
-            setSnackbar({
-              open: true,
-              message: 'Clip extraction failed. Please try again.',
-              severity: 'error',
-            });
-          }
-        } catch (error) {
-          console.error('Error polling extraction status:', error);
-          // Continue polling on error
-        }
-      }, 2000); // Poll every 2 seconds
-      
-      setExtractionPollInterval(pollInterval);
-      
-      // Set timeout to stop polling after 10 minutes
-      setTimeout(() => {
-        if (pollInterval) {
-          clearInterval(pollInterval);
-          setExtractionPollInterval(null);
-          if (isExtractingClips) {
-            setIsExtractingClips(false);
-            setSnackbar({
-              open: true,
-              message: 'Extraction timeout. Please check the status.',
-              severity: 'warning',
-            });
-          }
-        }
-      }, 10 * 60 * 1000); // 10 minutes
-      
-    } catch (error) {
-      console.error('Error extracting clips:', error);
-      setIsExtractingClips(false);
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start clip extraction. Please try again.';
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error',
-      });
-    }
-  };
-
   if (!video) return null;
 
   return (
-    <Paper
-      elevation={3}
+    <Box
       sx={{
-        mb: 4,
+        position: 'relative',
+        width: '100%',
+        aspectRatio: '16/9',
         backgroundColor: 'black',
         borderRadius: 2,
         overflow: 'hidden',
       }}
     >
-      <Box sx={{ position: 'relative', width: '100%' }}>
-        <IconButton
-          onClick={onClose}
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 10,
-            color: 'white',
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            },
-          }}
-          aria-label="Close video player"
-        >
-          <Close />
-        </IconButton>
-
-        <Box
-          ref={containerRef}
-          sx={{
-            position: 'relative',
+      <Box
+        ref={containerRef}
+        sx={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'black',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <video
+          ref={videoRef}
+          src={getVideoStreamUrl(video.id)}
+          controls={false}
+          style={{
             width: '100%',
-            maxHeight: isFullscreen ? '100vh' : '60vh',
-            height: isFullscreen ? '100vh' : 'auto',
-            backgroundColor: 'black',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
+            height: '100%',
+            display: 'block',
+            objectFit: 'contain',
           }}
-        >
-          <video
-            ref={videoRef}
-            src={getVideoStreamUrl(video.id)}
-            controls={false}
-            style={{
-              width: '100%',
-              maxHeight: isFullscreen ? '100vh' : '60vh',
-              height: isFullscreen ? '100%' : 'auto',
-              display: 'block',
-              objectFit: isFullscreen ? 'contain' : 'contain',
-            }}
-            onLoadedMetadata={() => {
-              if (videoRef.current && videoRef.current.duration) {
-                setDuration(videoRef.current.duration);
-              }
-            }}
-            onTimeUpdate={() => {
-              if (videoRef.current) {
-                setCurrentTime(videoRef.current.currentTime);
-              }
-            }}
-          />
+          onLoadedMetadata={() => {
+            if (videoRef.current && videoRef.current.duration) {
+              setDuration(videoRef.current.duration);
+            }
+          }}
+        />
 
-          <VideoControls
-            isPlaying={isPlaying}
-            currentTime={currentTime}
-            duration={duration}
-            volume={volume}
-            isMuted={isMuted}
-            onPlayPause={handlePlayPause}
-            onSeek={handleSeek}
-            onVolumeChange={handleVolumeChange}
-            onToggleMute={handleToggleMute}
-            onFullscreen={handleFullscreen}
-            onPrevious={handlePrevious}
-            onNext={handleNext}
-            hasPrevious={hasPrevious}
-            hasNext={hasNext}
-            moments={moments}
-            hasTranscript={!!transcript}
-            captionsEnabled={captionsEnabled}
-            onToggleCaptions={handleToggleCaptions}
-            isFullscreen={isFullscreen}
-          />
-
-          <VideoCaptions
-            text={currentCaptionText}
-            enabled={captionsEnabled}
-            isFullscreen={isFullscreen}
-          />
-        </Box>
-
-        <Box sx={{ p: 2, backgroundColor: 'background.paper', mt: 0 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box>
-              <Typography variant="h6">{video.title}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {video.filename}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                startIcon={<AutoAwesome />}
-                onClick={() => setIsGenerateMomentsModalOpen(true)}
-                disabled={!video.has_transcript || isGeneratingMoments}
-                sx={{ ml: 2 }}
-              >
-                Generate Moments
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={() => setIsAddMomentDialogOpen(true)}
-              >
-                Add Moment
-              </Button>
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Moments List */}
-        <MomentsList
-          moments={moments}
+        <VideoControls
+          isPlaying={isPlaying}
           currentTime={currentTime}
           duration={duration}
-          onMomentClick={handleMomentClick}
-          onAddMomentClick={() => setIsAddMomentDialogOpen(true)}
-          onGenerateMomentsClick={() => setIsGenerateMomentsModalOpen(true)}
-          hasTranscript={!!video.has_transcript}
-          onRefineClick={handleRefineClick}
-          onExtractClipsClick={handleExtractClipsClick}
+          volume={volume}
+          isMuted={isMuted}
+          onPlayPause={handlePlayPause}
+          onSeek={handleSeek}
+          onVolumeChange={handleVolumeChange}
+          onToggleMute={handleToggleMute}
+          onFullscreen={handleFullscreen}
+          onPrevious={onPrevious}
+          onNext={onNext}
+          hasPrevious={hasPrevious}
+          hasNext={hasNext}
+          moments={moments}
+          hasTranscript={!!transcript}
+          captionsEnabled={captionsEnabled}
+          onToggleCaptions={handleToggleCaptions}
+          isFullscreen={isFullscreen}
+        />
+
+        <VideoCaptions
+          text={currentCaptionText}
+          enabled={captionsEnabled}
+          isFullscreen={isFullscreen}
         />
       </Box>
-
-      <AddMomentDialog
-        open={isAddMomentDialogOpen}
-        onClose={() => setIsAddMomentDialogOpen(false)}
-        onSave={handleAddMoment}
-        videoDuration={duration}
-      />
-
-      <GenerateMomentsModal
-        open={isGenerateMomentsModalOpen}
-        onClose={() => setIsGenerateMomentsModalOpen(false)}
-        onGenerate={handleGenerateMoments}
-        video={video}
-        isGenerating={isGeneratingMoments}
-      />
-
-      <RefineMomentModal
-        open={isRefineMomentModalOpen}
-        onClose={() => {
-          if (!isRefiningMoment) {
-            setIsRefineMomentModalOpen(false);
-            setMomentToRefine(null);
-          }
-        }}
-        onRefine={handleRefineMoment}
-        moment={momentToRefine}
-        isRefining={isRefiningMoment}
-        videoId={video?.id}
-      />
-
-      <ExtractClipsModal
-        open={isExtractClipsModalOpen}
-        onClose={() => {
-          if (!isExtractingClips) {
-            setIsExtractClipsModalOpen(false);
-          }
-        }}
-        onExtract={handleExtractClips}
-        video={video}
-        isExtracting={isExtractingClips}
-      />
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Paper>
+    </Box>
   );
 };
 
 export default VideoPlayer;
-

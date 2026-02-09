@@ -106,6 +106,16 @@ export const addMoment = async (videoId, moment) => {
   }
 };
 
+export const deleteMoment = async (videoId, momentId) => {
+  try {
+    const response = await api.delete(`/videos/${videoId}/moments/${momentId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting moment:', error);
+    throw error;
+  }
+};
+
 export const processAudio = async (videoId) => {
   try {
     const response = await api.post(`/videos/${videoId}/process-audio`);

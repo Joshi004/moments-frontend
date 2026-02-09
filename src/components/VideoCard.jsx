@@ -96,7 +96,7 @@ const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick, on
         overflow: 'hidden',
         backgroundColor: 'background.paper',
       }}
-      onClick={onClick}
+      onClick={() => navigate(`/videos/${video.id}`)}
     >
       <Box
         sx={{

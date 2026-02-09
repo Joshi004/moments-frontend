@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Typography, Box, Snackbar, Alert } from '@mui/material';
 import VideoGrid from '../components/VideoGrid';
-import VideoPlayer from '../components/VideoPlayer';
 import ProcessAudioModal from '../components/ProcessAudioModal';
 import ProcessTranscriptModal from '../components/ProcessTranscriptModal';
 import UnifiedPipelineModal from '../components/UnifiedPipelineModal';
@@ -17,7 +16,6 @@ import { getVideos, processAudio, processTranscript, getAudioExtractionStatus, g
 const HomePage = () => {
   const navigate = useNavigate();
   const [videos, setVideos] = useState([]);
-  const [selectedVideo, setSelectedVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [processAudioModalOpen, setProcessAudioModalOpen] = useState(false);
@@ -93,22 +91,6 @@ const HomePage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleVideoClick = (video) => {
-    setSelectedVideo(video);
-  };
-
-  const handleCloseVideoPlayer = () => {
-    setSelectedVideo(null);
-  };
-
-  const handlePreviousVideo = (video) => {
-    setSelectedVideo(video);
-  };
-
-  const handleNextVideo = (video) => {
-    setSelectedVideo(video);
   };
 
   const handleAudioIconClick = (video) => {
@@ -586,17 +568,7 @@ const HomePage = () => {
         </Box>
       )}
 
-      {!loading && !error && selectedVideo && (
-        <VideoPlayer
-          video={selectedVideo}
-          videos={videos}
-          onClose={handleCloseVideoPlayer}
-          onPrevious={handlePreviousVideo}
-          onNext={handleNextVideo}
-        />
-      )}
-
-      {!loading && !error && !selectedVideo && (
+      {!loading && !error && (
         <>
           <LibraryToolbar
             searchTerm={searchTerm}
@@ -620,7 +592,6 @@ const HomePage = () => {
           <VideoGrid
             videos={processedVideos}
             viewMode={viewMode}
-            onVideoClick={handleVideoClick}
             onAudioIconClick={handleAudioIconClick}
             onTranscriptIconClick={handleTranscriptIconClick}
             onProcessPipelineClick={handleProcessPipelineClick}

@@ -8,6 +8,7 @@ import URLGeneratePage from './pages/URLGeneratePage';
 import PipelineHistoryPage from './pages/PipelineHistoryPage';
 import AdminPage from './pages/AdminPage';
 import DashboardPage from './pages/DashboardPage';
+import VideoDetailPage from './pages/VideoDetailPage';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Routes>
             {/* New routes */}
             <Route path="/" element={<DashboardPage />} />
+            <Route path="/videos/:id" element={<VideoDetailPage />} />
             <Route path="/videos" element={<HomePage />} />
             <Route path="/generate" element={<URLGeneratePage />} />
             <Route path="/pipelines" element={<PipelineHistoryPage />} />
