@@ -157,7 +157,7 @@ const DashboardPage = () => {
 
       {/* Row 3: Active Pipelines + Recent Activity */}
       <Grid container spacing={3}>
-        <Grid item xs={12} md={7}>
+        <Grid item xs={12} md={6}>
           {loading ? (
             <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} />
           ) : (
@@ -168,7 +168,7 @@ const DashboardPage = () => {
           )}
         </Grid>
 
-        <Grid item xs={12} md={5}>
+        <Grid item xs={12} md={6}>
           {loading ? (
             <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} />
           ) : (

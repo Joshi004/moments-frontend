@@ -4,6 +4,8 @@ import {
   Typography,
   TextField,
   InputAdornment,
+  useTheme,
+  alpha,
 } from '@mui/material';
 import { Search, Transcribe } from '@mui/icons-material';
 import EmptyState from '../common/EmptyState';
@@ -16,6 +18,7 @@ const TranscriptTab = ({
   hasAudio = false,
   isProcessingTranscript = false,
 }) => {
+  const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
 
   // Extract text from transcript (before any early returns to satisfy Rules of Hooks)
@@ -81,10 +84,14 @@ const TranscriptTab = ({
     
     if (index === -1) return text;
     
+    const highlightColor = theme.palette.mode === 'dark' 
+      ? alpha(theme.palette.warning.main, 0.3) 
+      : '#FEF08A';
+    
     return (
       <>
         {text.substring(0, index)}
-        <mark style={{ backgroundColor: '#FEF08A', padding: '0 2px' }}>
+        <mark style={{ backgroundColor: highlightColor, padding: '0 2px' }}>
           {text.substring(index, index + search.length)}
         </mark>
         {highlightText(text.substring(index + search.length), search)}

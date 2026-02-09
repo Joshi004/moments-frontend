@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Box, Typography, Snackbar, Alert, Skeleton, Button } from '@mui/material';
+import { Box, Typography, Snackbar, Alert, Skeleton, Button } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import DetailPageHeader from '../components/detail/DetailPageHeader';
 import VideoPlayer from '../components/VideoPlayer';
@@ -703,7 +703,7 @@ const VideoDetailPage = () => {
   // Error state
   if (error && !loading) {
     return (
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Box sx={{ py: 4 }}>
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography variant="h5" color="error" gutterBottom>
             {error}
@@ -717,12 +717,12 @@ const VideoDetailPage = () => {
             Back to Video Library
           </Button>
         </Box>
-      </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Box sx={{ py: 2 }}>
       <DetailPageHeader
         videoTitle={video?.filename || 'Loading...'}
         onBack={handleBack}
@@ -740,17 +740,22 @@ const VideoDetailPage = () => {
         </Box>
       ) : (
         <>
-          {/* Two-column layout: Player + Sidebar */}
+          {/* Two-column layout: Left (Player + Tabs) | Right (Moments Sidebar) */}
           <Box
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', lg: 'row' },
               gap: 2,
-              mb: 3,
             }}
           >
-            {/* Player - 65% on desktop */}
-            <Box sx={{ flex: { lg: '0 0 65%' }, width: { xs: '100%' } }}>
+            {/* Left column: Player + Info Tabs */}
+            <Box
+              sx={{
+                flex: { lg: '1 1 0%' },
+                minWidth: 0,
+                width: { xs: '100%' },
+              }}
+            >
               <VideoPlayer
                 ref={playerRef}
                 video={video}
@@ -762,14 +767,47 @@ const VideoDetailPage = () => {
                 hasPrevious={hasPrevious}
                 hasNext={hasNext}
               />
+
+              {/* Info Tabs directly below the player */}
+              <Box sx={{ mt: 2 }}>
+                <InfoTabs
+                  video={video}
+                  moments={moments}
+                  transcript={transcript}
+                  currentTime={currentTime}
+                  pipelineHistory={pipelineHistory}
+                  // Overview tab handlers
+                  onProcessAudio={handleProcessAudioClick}
+                  onProcessTranscript={handleProcessTranscriptClick}
+                  onGenerateMoments={handleGenerateClick}
+                  onExtractClips={handleExtractClipsClick}
+                  onRunPipeline={handleRunPipelineClick}
+                  // Processing states
+                  isProcessingAudio={isProcessingAudio}
+                  isProcessingTranscript={isProcessingTranscript}
+                  isGeneratingMoments={isGeneratingMoments}
+                  isExtractingClips={isExtractingClips}
+                  // Transcript tab handlers
+                  onSeekTo={handleSeekTo}
+                  onGenerateTranscript={handleProcessTranscriptClick}
+                  // Pipeline tab handlers
+                  onStartPipeline={handleRunPipelineClick}
+                  onCancelPipeline={handleCancelPipeline}
+                  onRefreshHistory={fetchPipelineHistoryData}
+                  isLoadingHistory={loading}
+                />
+              </Box>
             </Box>
 
-            {/* Sidebar - 35% on desktop */}
+            {/* Right column: Moments Sidebar */}
             <Box
               sx={{
-                flex: { lg: '0 0 35%' },
+                flex: { lg: '0 0 340px' },
                 width: { xs: '100%' },
-                maxHeight: { lg: 'calc(100vh - 200px)' },
+                maxHeight: { lg: 'calc(100vh - 140px)' },
+                position: { lg: 'sticky' },
+                top: { lg: '80px' },
+                alignSelf: { lg: 'flex-start' },
               }}
             >
               <MomentsSidebar
@@ -786,36 +824,6 @@ const VideoDetailPage = () => {
                 loading={loading}
               />
             </Box>
-          </Box>
-
-          {/* Info Tabs Panel */}
-          <Box sx={{ mt: 3 }}>
-            <InfoTabs
-              video={video}
-              moments={moments}
-              transcript={transcript}
-              currentTime={currentTime}
-              pipelineHistory={pipelineHistory}
-              // Overview tab handlers
-              onProcessAudio={handleProcessAudioClick}
-              onProcessTranscript={handleProcessTranscriptClick}
-              onGenerateMoments={handleGenerateClick}
-              onExtractClips={handleExtractClipsClick}
-              onRunPipeline={handleRunPipelineClick}
-              // Processing states
-              isProcessingAudio={isProcessingAudio}
-              isProcessingTranscript={isProcessingTranscript}
-              isGeneratingMoments={isGeneratingMoments}
-              isExtractingClips={isExtractingClips}
-              // Transcript tab handlers
-              onSeekTo={handleSeekTo}
-              onGenerateTranscript={handleProcessTranscriptClick}
-              // Pipeline tab handlers
-              onStartPipeline={handleRunPipelineClick}
-              onCancelPipeline={handleCancelPipeline}
-              onRefreshHistory={fetchPipelineHistoryData}
-              isLoadingHistory={loading}
-            />
           </Box>
         </>
       )}
@@ -911,7 +919,7 @@ const VideoDetailPage = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
   );
 };
 

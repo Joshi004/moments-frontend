@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Typography, Box, Snackbar, Alert } from '@mui/material';
+import { Container, Typography, Box, Snackbar, Alert, Button } from '@mui/material';
 import VideoGrid from '../components/VideoGrid';
 import ProcessAudioModal from '../components/ProcessAudioModal';
 import ProcessTranscriptModal from '../components/ProcessTranscriptModal';
@@ -10,11 +10,15 @@ import PipelineConfirmDialog from '../components/PipelineConfirmDialog';
 import DeleteVideoModal from '../components/DeleteVideoModal';
 import PageHeader from '../components/common/PageHeader';
 import LibraryToolbar from '../components/library/LibraryToolbar';
+import SkeletonCard from '../components/common/SkeletonCard';
+import BulkActionBar from '../components/library/BulkActionBar';
 import useDebounce from '../hooks/useDebounce';
 import { getVideos, processAudio, processTranscript, getAudioExtractionStatus, getTranscriptionStatus, startPipeline, getPipelineStatus, cancelPipeline, deleteVideo } from '../services/api';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const { addNotification } = useNotifications();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,6 +53,10 @@ const HomePage = () => {
   const [viewMode, setViewMode] = useState(() => {
     return localStorage.getItem('videoLibraryViewMode') || 'grid';
   });
+  
+  // Bulk selection state
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
   
   // Debounce search term
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -349,17 +357,35 @@ const HomePage = () => {
               message: 'Pipeline completed successfully!',
               severity: 'success',
             });
+            // Add notification
+            addNotification({
+              type: 'success',
+              message: `Pipeline completed for video ${videoId}`,
+              actionUrl: `/videos/${videoId}`,
+            });
           } else if (status.status === 'failed') {
             setSnackbar({
               open: true,
               message: `Pipeline failed: ${status.error_message || 'Unknown error'}`,
               severity: 'error',
             });
+            // Add notification
+            addNotification({
+              type: 'error',
+              message: `Pipeline failed for video ${videoId}`,
+              actionUrl: `/videos/${videoId}`,
+            });
           } else if (status.status === 'cancelled') {
             setSnackbar({
               open: true,
               message: 'Pipeline was cancelled',
               severity: 'warning',
+            });
+            // Add notification
+            addNotification({
+              type: 'warning',
+              message: `Pipeline cancelled for video ${videoId}`,
+              actionUrl: `/videos/${videoId}`,
             });
           }
         }
@@ -545,18 +571,132 @@ const HomePage = () => {
     return parts.join(' • ');
   }, [processedVideos.length, videos.length, debouncedSearchTerm, activeFilters]);
 
+  // Bulk selection handlers
+  const handleSelectVideo = (videoId) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(videoId)) {
+        newSet.delete(videoId);
+      } else {
+        newSet.add(videoId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const allIds = new Set(processedVideos.map(v => v.id));
+    setSelectedIds(allIds);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleCancelSelection = () => {
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    const idsToDelete = Array.from(selectedIds);
+    
+    try {
+      // Delete all selected videos
+      await Promise.all(
+        idsToDelete.map(videoId => deleteVideo(videoId, { delete_all: true }))
+      );
+      
+      setSnackbar({
+        open: true,
+        message: `Successfully deleted ${idsToDelete.length} video${idsToDelete.length !== 1 ? 's' : ''}`,
+        severity: 'success',
+      });
+      
+      // Reset selection
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      
+      // Refresh video list
+      await fetchVideos();
+    } catch (error) {
+      console.error('Error deleting videos:', error);
+      setSnackbar({
+        open: true,
+        message: `Failed to delete some videos: ${error.message}`,
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleBulkPipeline = async () => {
+    const idsToProcess = Array.from(selectedIds);
+    
+    try {
+      // Start pipeline for all selected videos
+      await Promise.all(
+        idsToProcess.map(videoId => startPipeline(videoId, {}))
+      );
+      
+      setSnackbar({
+        open: true,
+        message: `Pipeline started for ${idsToProcess.length} video${idsToProcess.length !== 1 ? 's' : ''}`,
+        severity: 'success',
+      });
+      
+      // Start polling for each video
+      idsToProcess.forEach(videoId => {
+        startPipelineStatusPolling(videoId);
+      });
+      
+      // Reset selection
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+    } catch (error) {
+      console.error('Error starting pipelines:', error);
+      setSnackbar({
+        open: true,
+        message: `Failed to start pipelines: ${error.message}`,
+        severity: 'error',
+      });
+    }
+  };
+
+  const allSelected = processedVideos.length > 0 && selectedIds.size === processedVideos.length;
+
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <PageHeader
         title="Video Library"
         subtitle="Browse, search, and manage your video collection"
+        actions={
+          !isSelectMode && (
+            <Button
+              variant="outlined"
+              onClick={() => setIsSelectMode(true)}
+            >
+              Select
+            </Button>
+          )
+        }
       />
 
       {loading && (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography variant="h6" color="text.secondary">
-            Loading videos...
-          </Typography>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, 1fr)',
+              md: 'repeat(3, 1fr)',
+              lg: 'repeat(4, 1fr)',
+            },
+            gap: 2,
+          }}
+        >
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </Box>
       )}
 
@@ -570,6 +710,20 @@ const HomePage = () => {
 
       {!loading && !error && (
         <>
+          {/* Bulk Action Bar */}
+          {isSelectMode && selectedIds.size > 0 && (
+            <BulkActionBar
+              selectedCount={selectedIds.size}
+              totalCount={processedVideos.length}
+              onSelectAll={handleSelectAll}
+              onDeselectAll={handleDeselectAll}
+              onDelete={handleBulkDelete}
+              onRunPipeline={handleBulkPipeline}
+              onCancel={handleCancelSelection}
+              allSelected={allSelected}
+            />
+          )}
+
           <LibraryToolbar
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -598,6 +752,15 @@ const HomePage = () => {
             onPipelineStatusClick={handlePipelineStatusClick}
             onDeleteClick={handleDeleteClick}
             pipelineStatuses={pipelineStatuses}
+            hasActiveFilters={!activeFilters.includes('all') || debouncedSearchTerm.length > 0}
+            onClearFilters={() => {
+              setActiveFilters(['all']);
+              setSearchTerm('');
+            }}
+            allVideosCount={videos.length}
+            isSelectMode={isSelectMode}
+            selectedIds={selectedIds}
+            onSelectVideo={handleSelectVideo}
           />
         </>
       )}

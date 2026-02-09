@@ -4,9 +4,23 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Touch-friendly targets for mobile devices */
+@media (pointer: coarse) {
+  button, .MuiIconButton-root {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+  
+  .MuiListItemButton-root {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+  }
 }

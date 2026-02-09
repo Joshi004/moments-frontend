@@ -20,29 +20,38 @@ const QuickActions = () => {
           }}
         >
           <CardActionArea onClick={() => navigate('/generate')} sx={{ height: '100%' }}>
-            <CardContent sx={{ textAlign: 'center', py: 4 }}>
+            <CardContent
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                py: 2,
+                px: 2.5,
+              }}
+            >
               <Box
                 sx={{
-                  width: 72,
-                  height: 72,
+                  width: 48,
+                  height: 48,
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   backgroundColor: 'primary.light',
                   color: 'primary.contrastText',
-                  mx: 'auto',
-                  mb: 2,
+                  flexShrink: 0,
                 }}
               >
-                <LinkIcon sx={{ fontSize: 40 }} />
+                <LinkIcon sx={{ fontSize: 24 }} />
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                Generate from URL
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Create moments from any video URL
-              </Typography>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                  Generate from URL
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Create moments from any video URL
+                </Typography>
+              </Box>
             </CardContent>
           </CardActionArea>
         </Card>
@@ -60,29 +69,38 @@ const QuickActions = () => {
           }}
         >
           <CardActionArea onClick={() => navigate('/videos')} sx={{ height: '100%' }}>
-            <CardContent sx={{ textAlign: 'center', py: 4 }}>
+            <CardContent
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                py: 2,
+                px: 2.5,
+              }}
+            >
               <Box
                 sx={{
-                  width: 72,
-                  height: 72,
+                  width: 48,
+                  height: 48,
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   backgroundColor: 'primary.light',
                   color: 'primary.contrastText',
-                  mx: 'auto',
-                  mb: 2,
+                  flexShrink: 0,
                 }}
               >
-                <VideoLibrary sx={{ fontSize: 40 }} />
+                <VideoLibrary sx={{ fontSize: 24 }} />
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                View Video Library
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Browse and manage your videos
-              </Typography>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                  View Video Library
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Browse and manage your videos
+                </Typography>
+              </Box>
             </CardContent>
           </CardActionArea>
         </Card>

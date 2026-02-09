@@ -1,12 +1,24 @@
 import React, { useState } from 'react';
-import { Card, CardMedia, CardContent, Typography, Box, Skeleton, IconButton, Menu, MenuItem, Divider, Chip, Stack } from '@mui/material';
+import { Card, CardMedia, CardContent, Typography, Box, Skeleton, IconButton, Menu, MenuItem, Divider, Chip, Stack, Checkbox } from '@mui/material';
 import { PlayCircleOutline, MoreVert as MoreVertIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { getThumbnailUrl, getBackendBaseUrl } from '../services/api';
 import PipelineStatusBadge from './PipelineStatusBadge';
 import { formatDuration } from '../utils/formatters';
 
-const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick, onProcessPipelineClick, onPipelineStatusClick, onDeleteClick, pipelineStatus }) => {
+const VideoCard = ({ 
+  video, 
+  onClick, 
+  onAudioIconClick, 
+  onTranscriptIconClick, 
+  onProcessPipelineClick, 
+  onPipelineStatusClick, 
+  onDeleteClick, 
+  pipelineStatus,
+  showCheckbox = false,
+  isSelected = false,
+  onSelect,
+}) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -73,11 +85,32 @@ const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick, on
     pipelineStatus.status === 'pending'
   );
 
+  const handleCheckboxClick = (e) => {
+    e.stopPropagation();
+    if (onSelect) {
+      onSelect(video.id);
+    }
+  };
+
+  const handleCardClick = () => {
+    if (showCheckbox) {
+      // In select mode, clicking the card also toggles selection
+      if (onSelect) {
+        onSelect(video.id);
+      }
+    } else {
+      // Normal mode: navigate
+      navigate(`/videos/${video.id}`);
+    }
+  };
+
   return (
     <Card
       sx={{
         cursor: 'pointer',
         transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+        border: isSelected ? '2px solid' : '1px solid',
+        borderColor: isSelected ? 'primary.main' : 'rgba(0, 0, 0, 0.12)',
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: 6,
@@ -87,25 +120,27 @@ const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick, on
               opacity: 0.9,
             },
           },
+          '& .selection-checkbox': {
+            opacity: 1,
+          },
         },
         display: 'flex',
         flexDirection: 'column',
-        width: '320px',
+        width: '100%',
         height: 'auto',
         borderRadius: 2,
         overflow: 'hidden',
         backgroundColor: 'background.paper',
       }}
-      onClick={() => navigate(`/videos/${video.id}`)}
+      onClick={handleCardClick}
     >
       <Box
         sx={{
           position: 'relative',
-          width: '320px',
-          height: '180px',
+          width: '100%',
+          paddingTop: '56.25%', // 16:9 aspect ratio
           backgroundColor: 'grey.300',
           overflow: 'hidden',
-          flexShrink: 0,
         }}
       >
         {!imageLoaded && (
@@ -183,6 +218,38 @@ const VideoCard = ({ video, onClick, onAudioIconClick, onTranscriptIconClick, on
             }}
           />
         </Box>
+        {/* Selection Checkbox */}
+        {showCheckbox && (
+          <Box
+            className="selection-checkbox"
+            sx={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              zIndex: 10,
+              opacity: isSelected ? 1 : 0.7,
+              transition: 'opacity 0.2s',
+            }}
+            onClick={handleCheckboxClick}
+          >
+            <Checkbox
+              checked={isSelected}
+              sx={{
+                color: 'white',
+                bgcolor: 'rgba(0, 0, 0, 0.5)',
+                borderRadius: '4px',
+                '&.Mui-checked': {
+                  color: 'white',
+                  bgcolor: 'primary.main',
+                },
+                '&:hover': {
+                  bgcolor: 'rgba(0, 0, 0, 0.7)',
+                },
+              }}
+            />
+          </Box>
+        )}
+
         {/* Duration badge */}
         {video.duration && (
           <Box

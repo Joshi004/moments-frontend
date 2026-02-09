@@ -12,10 +12,12 @@ import {
   CircularProgress,
   Checkbox,
   FormControlLabel,
+  useTheme,
 } from '@mui/material';
 import { ContentCut } from '@mui/icons-material';
 
 const ExtractClipsModal = ({ open, onClose, onExtract, video, isExtracting }) => {
+  const theme = useTheme();
   const [overrideExisting, setOverrideExisting] = useState(true);
   const [submitError, setSubmitError] = useState('');
 
@@ -65,7 +67,7 @@ const ExtractClipsModal = ({ open, onClose, onExtract, video, isExtracting }) =>
               This will extract video clips for all original moments. Padding (30 seconds on each side) is configured in the backend and aligned to word boundaries from the transcript.
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Each clip will be saved as: <code style={{ backgroundColor: '#f5f5f5', padding: '2px 6px', borderRadius: '4px' }}>
+              Each clip will be saved as: <code style={{ backgroundColor: theme.palette.action.hover, padding: '2px 6px', borderRadius: '4px' }}>
                 {'<video>_<moment_id>_clip.mp4'}
               </code>
             </Typography>

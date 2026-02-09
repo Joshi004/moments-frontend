@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -14,6 +15,7 @@ import {
   Refresh,
   ContentCopy,
   HourglassEmpty,
+  VideoLibrary,
 } from '@mui/icons-material';
 import MomentCard from './MomentCard';
 import RefinementBanner from './RefinementBanner';
@@ -28,6 +30,7 @@ const ResultsSection = ({
   isFullyComplete,
   onReset 
 }) => {
+  const navigate = useNavigate();
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
 
@@ -109,7 +112,16 @@ const ResultsSection = ({
           )}
         </Box>
 
-        <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+        <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<VideoLibrary />}
+            onClick={() => navigate(`/videos/${videoId}`)}
+            size="large"
+          >
+            View in Library
+          </Button>
           {moments.length > 0 && (
             <Button
               variant="outlined"
@@ -120,11 +132,11 @@ const ResultsSection = ({
             </Button>
           )}
           <Button
-            variant="contained"
+            variant="outlined"
             startIcon={<Refresh />}
             onClick={onReset}
           >
-            Process Another Video
+            Generate Another
           </Button>
         </Box>
       </Paper>

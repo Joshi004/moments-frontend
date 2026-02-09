@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { AutoAwesome, Add, ContentCut } from '@mui/icons-material';
 import MomentCard from './MomentCard';
+import EmptyState from '../common/EmptyState';
 
 const MomentsSidebar = ({
   moments = [],
@@ -171,22 +172,15 @@ const MomentsSidebar = ({
         }}
       >
         {displayedMoments.length === 0 ? (
-          <Box
-            sx={{
-              textAlign: 'center',
-              py: 6,
-              px: 2,
-            }}
-          >
-            <Typography variant="body1" color="text.secondary" gutterBottom>
-              No moments yet
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {hasTranscript 
-                ? "Click 'Generate' to create AI-powered moments."
-                : "Generate a transcript first to enable AI-powered moments."}
-            </Typography>
-          </Box>
+          <EmptyState
+            icon={<AutoAwesome />}
+            title="No moments"
+            message={hasTranscript 
+              ? "Generate AI-powered moments to highlight key segments of your video."
+              : "Generate a transcript first to enable AI-powered moments."}
+            actionLabel={hasTranscript ? "Generate Moments" : undefined}
+            onAction={hasTranscript ? onGenerateClick : undefined}
+          />
         ) : (
           displayedMoments.map((moment) => {
             const isActive = activeMoment?.id === moment.id;

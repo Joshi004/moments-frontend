@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Paper,
   Typography,
   Table,
@@ -24,6 +23,7 @@ import {
   Switch,
   FormControlLabel,
   Snackbar,
+  DialogContentText,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -36,14 +36,15 @@ import {
   updateModelConfig,
   deleteModelConfig,
   seedModelConfigs,
-} from '../services/api';
+} from '../../services/api';
 
-const AdminPage = () => {
+const ModelManagement = () => {
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [forceSeedDialogOpen, setForceSeedDialogOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(null);
   const [formData, setFormData] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -83,23 +84,26 @@ const AdminPage = () => {
     }
   };
 
+  const handleForceSeedClick = () => {
+    setForceSeedDialogOpen(true);
+  };
+
   const handleForceSeed = async () => {
-    if (window.confirm('This will overwrite all existing configurations. Are you sure?')) {
-      try {
-        const response = await seedModelConfigs(true);
-        setSnackbar({
-          open: true,
-          message: response.message || 'Force-seeded successfully',
-          severity: 'success',
-        });
-        loadModels();
-      } catch (err) {
-        setSnackbar({
-          open: true,
-          message: err.response?.data?.detail || 'Failed to force-seed',
-          severity: 'error',
-        });
-      }
+    setForceSeedDialogOpen(false);
+    try {
+      const response = await seedModelConfigs(true);
+      setSnackbar({
+        open: true,
+        message: response.message || 'Force-seeded successfully',
+        severity: 'success',
+      });
+      loadModels();
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err.response?.data?.detail || 'Failed to force-seed',
+        severity: 'error',
+      });
     }
   };
 
@@ -224,17 +228,17 @@ const AdminPage = () => {
 
   if (loading) {
     return (
-      <Container sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
         <CircularProgress />
-      </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <>
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4">Model Configuration Registry</Typography>
+          <Typography variant="h5">Model Configuration Registry</Typography>
           <Box>
             <Button
               startIcon={<CloudUploadIcon />}
@@ -246,7 +250,7 @@ const AdminPage = () => {
             </Button>
             <Button
               startIcon={<CloudUploadIcon />}
-              onClick={handleForceSeed}
+              onClick={handleForceSeedClick}
               variant="outlined"
               color="warning"
               sx={{ mr: 1 }}
@@ -466,6 +470,22 @@ const AdminPage = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Force Seed Confirmation Dialog */}
+      <Dialog open={forceSeedDialogOpen} onClose={() => setForceSeedDialogOpen(false)}>
+        <DialogTitle>Confirm Force Seed</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This will overwrite all existing configurations. Are you sure you want to continue?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setForceSeedDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleForceSeed} variant="contained" color="warning">
+            Force Seed
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
@@ -480,8 +500,8 @@ const AdminPage = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </>
   );
 };
 
-export default AdminPage;
+export default ModelManagement;

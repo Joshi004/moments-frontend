@@ -86,7 +86,7 @@ const ActivePipelinesWidget = ({ videos = [], initialActivePipelines = [] }) => 
   };
 
   return (
-    <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+    <Paper elevation={2} sx={{ p: 3, borderRadius: 2, height: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
         <Timeline />
         <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>

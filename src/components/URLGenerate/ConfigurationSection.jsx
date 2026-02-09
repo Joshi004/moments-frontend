@@ -33,7 +33,7 @@ const ConfigurationSection = ({ config, onConfigChange, disabled }) => {
       <AccordionSummary expandIcon={<ExpandMore />}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Settings color="action" />
-          <Typography variant="h6">Advanced Options</Typography>
+          <Typography variant="h6">Advanced Configuration</Typography>
         </Box>
       </AccordionSummary>
       <AccordionDetails>

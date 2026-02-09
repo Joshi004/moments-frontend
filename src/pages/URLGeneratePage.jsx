@@ -6,13 +6,17 @@ import {
   Button,
   Alert,
   CircularProgress,
+  Card,
+  Avatar,
 } from '@mui/material';
+import { Rocket as RocketIcon } from '@mui/icons-material';
 import {
   URLInputSection,
   ConfigurationSection,
   ProgressSection,
   ResultsSection,
 } from '../components/URLGenerate';
+import { addRecentUrl } from '../components/URLGenerate/URLInputSection';
 import {
   generateMomentsFromUrl,
   getMoments,
@@ -34,6 +38,31 @@ const DEFAULT_CONFIG = {
   include_video_refinement: true,
   generation_prompt: DEFAULT_GENERATION_PROMPT,
 };
+
+// Step header component
+const StepHeader = ({ number, title, subtitle, active }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+    <Avatar
+      sx={{
+        bgcolor: active ? 'primary.main' : 'action.disabledBackground',
+        width: 36,
+        height: 36,
+        fontSize: '0.95rem',
+        fontWeight: 700,
+      }}
+    >
+      {number}
+    </Avatar>
+    <Box>
+      <Typography variant="h6">{title}</Typography>
+      {subtitle && (
+        <Typography variant="body2" color="text.secondary">
+          {subtitle}
+        </Typography>
+      )}
+    </Box>
+  </Box>
+);
 
 const URLGeneratePage = () => {
   // Form state
@@ -158,6 +187,9 @@ const URLGeneratePage = () => {
       } else {
         setPageState('processing'); // Will skip download stage
       }
+
+      // Save to recent URLs
+      addRecentUrl(url);
     } catch (err) {
       console.error('Error generating moments:', err);
       const errorMessage = err.response?.data?.detail || err.message || 'Failed to start pipeline';
@@ -202,13 +234,19 @@ const URLGeneratePage = () => {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      {/* Description */}
+      {/* Page Description */}
       <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
         Paste a video URL to download and generate moments automatically
       </Typography>
 
-      {/* URL Input Section */}
-      {(isIdle || isError) && (
+      {/* Step 1: Video Source */}
+      <Card elevation={1} sx={{ p: 3, mb: 3 }}>
+        <StepHeader
+          number={1}
+          title="Video Source"
+          subtitle="Enter the URL of the video to process"
+          active={isIdle || isError}
+        />
         <URLInputSection
           url={url}
           onUrlChange={setUrl}
@@ -217,28 +255,33 @@ const URLGeneratePage = () => {
           disabled={isProcessing}
           error={urlError}
         />
-      )}
+      </Card>
 
-      {/* Configuration Section */}
-      {(isIdle || isError) && (
-        <Box sx={{ mt: 3 }}>
-          <ConfigurationSection
-            config={config}
-            onConfigChange={setConfig}
-            disabled={isProcessing}
-          />
-        </Box>
-      )}
+      {/* Step 2: Configuration */}
+      <Card elevation={1} sx={{ p: 3, mb: 3 }}>
+        <StepHeader
+          number={2}
+          title="Configuration"
+          subtitle="Customize AI model and generation settings"
+          active={isIdle || isError}
+        />
+        <ConfigurationSection
+          config={config}
+          onConfigChange={setConfig}
+          disabled={isProcessing}
+        />
+      </Card>
 
       {/* Generate Button */}
       {(isIdle || isError) && (
-        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
           <Button
             variant="contained"
             size="large"
             onClick={handleGenerateMoments}
             disabled={isProcessing || !url.trim()}
-            sx={{ minWidth: 200 }}
+            startIcon={<RocketIcon />}
+            sx={{ minWidth: 240, py: 1.5 }}
           >
             {isProcessing ? (
               <>
@@ -254,38 +297,54 @@ const URLGeneratePage = () => {
 
       {/* Error Alert */}
       {isError && error && (
-        <Alert severity="error" sx={{ mt: 3 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
       {/* Cached Info */}
       {isProcessing && isCached && (
-        <Alert severity="info" sx={{ mt: 3 }}>
+        <Alert severity="info" sx={{ mb: 3 }}>
           Video found in cache - download skipped
         </Alert>
       )}
 
-      {/* Progress Section */}
+      {/* Step 3: Progress */}
       {isProcessing && videoId && (
-        <ProgressSection
-          videoId={videoId}
-          requestId={requestId}
-          onCancel={handleCancel}
-        />
+        <Card elevation={1} sx={{ p: 3, mb: 3 }}>
+          <StepHeader
+            number={3}
+            title="Progress"
+            subtitle="Pipeline is running..."
+            active={true}
+          />
+          <ProgressSection
+            videoId={videoId}
+            requestId={requestId}
+            onCancel={handleCancel}
+          />
+        </Card>
       )}
 
-      {/* Results Section */}
+      {/* Step 4: Results */}
       {(isMomentsReady || isCompleted) && (
-        <ResultsSection
-          videoId={videoId}
-          requestId={requestId}
-          moments={moments}
-          totalDuration={totalDuration}
-          refinementProgress={refinementProgress}
-          isFullyComplete={isCompleted}
-          onReset={handleReset}
-        />
+        <Card elevation={1} sx={{ p: 3 }}>
+          <StepHeader
+            number={4}
+            title="Results"
+            subtitle={isCompleted ? 'Pipeline completed successfully' : 'Moments generated, refinement in progress'}
+            active={true}
+          />
+          <ResultsSection
+            videoId={videoId}
+            requestId={requestId}
+            moments={moments}
+            totalDuration={totalDuration}
+            refinementProgress={refinementProgress}
+            isFullyComplete={isCompleted}
+            onReset={handleReset}
+          />
+        </Card>
       )}
     </Container>
   );

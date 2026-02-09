@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Paper, Typography, Grid, Alert, Button, Chip } from '@mui/material';
+import { Box, Paper, Typography, Grid, Alert, Button, Chip, Skeleton } from '@mui/material';
 import { Timeline, Refresh } from '@mui/icons-material';
 import PageHeader from '../components/common/PageHeader';
 import ActivePipelineCard from '../components/pipelines/ActivePipelineCard';
@@ -253,11 +253,17 @@ const PipelineMonitorPage = () => {
         </Box>
 
         {loading ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="body2" color="text.secondary">
-              Loading active pipelines...
-            </Typography>
-          </Box>
+          <Grid container spacing={2}>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Grid item xs={12} md={6} key={i}>
+                <Paper sx={{ p: 2 }}>
+                  <Skeleton variant="text" width="60%" height={24} sx={{ mb: 1 }} />
+                  <Skeleton variant="text" width="40%" height={20} sx={{ mb: 2 }} />
+                  <Skeleton variant="rectangular" height={60} sx={{ borderRadius: 1 }} />
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
         ) : activePipelines.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Timeline sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />

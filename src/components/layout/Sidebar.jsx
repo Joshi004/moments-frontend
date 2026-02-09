@@ -12,6 +12,7 @@ import {
   IconButton,
   Divider,
   alpha,
+  useTheme,
 } from '@mui/material';
 import {
   DashboardOutlined,
@@ -22,9 +23,12 @@ import {
   ChevronLeft,
   ChevronRight,
   SlideshowOutlined,
+  LightMode,
+  DarkMode,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from '../../theme';
+import { useThemeMode } from '../../contexts/ThemeContext';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: <DashboardOutlined />, path: '/' },
@@ -37,6 +41,8 @@ const NAV_ITEMS = [
 const Sidebar = ({ open, onToggle, isMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const { mode, toggleMode } = useThemeMode();
 
   const isActive = (path) => {
     if (path === '/') {
@@ -154,13 +160,47 @@ const Sidebar = ({ open, onToggle, isMobile }) => {
       {/* Footer section */}
       <Box sx={{ p: 2 }}>
         <Divider sx={{ mb: 1.5 }} />
+        
+        {/* Dark mode toggle */}
+        <Box sx={{ mb: 1.5 }}>
+          {open ? (
+            <ListItemButton
+              onClick={toggleMode}
+              sx={{
+                borderRadius: 1,
+                py: 0.5,
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                {mode === 'dark' ? <LightMode /> : <DarkMode />}
+              </ListItemIcon>
+              <ListItemText
+                primary={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                primaryTypographyProps={{ variant: 'caption' }}
+              />
+            </ListItemButton>
+          ) : (
+            <Tooltip title={mode === 'dark' ? 'Light Mode' : 'Dark Mode'} placement="right">
+              <IconButton
+                onClick={toggleMode}
+                sx={{
+                  width: '100%',
+                  borderRadius: 1,
+                }}
+              >
+                {mode === 'dark' ? <LightMode /> : <DarkMode />}
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
           <Box
             sx={{
               width: 8,
               height: 8,
               borderRadius: '50%',
-              bgcolor: '#10B981',
+              bgcolor: theme.palette.secondary.main,
             }}
           />
           {open && (

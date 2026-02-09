@@ -5,6 +5,7 @@ import {
   Slider,
   Typography,
   Stack,
+  useTheme,
 } from '@mui/material';
 import {
   PlayArrow,
@@ -40,6 +41,7 @@ const VideoControls = ({
   captionsEnabled = false,
   onToggleCaptions,
 }) => {
+  const theme = useTheme();
   const [hoveredMoment, setHoveredMoment] = useState(null);
   const [hoverTime, setHoverTime] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, relativeX: 0 });
@@ -199,7 +201,7 @@ const VideoControls = ({
                     left: `${startPercent}%`,
                     width: `${width}%`,
                     height: '100%',
-                    backgroundColor: '#2196F3',
+                    backgroundColor: theme.palette.primary.main,
                     opacity: isHovered ? 0.7 : 0.5,
                     borderRadius: '3px',
                     transition: 'opacity 0.2s ease-in-out',
@@ -223,7 +225,7 @@ const VideoControls = ({
                     transform: 'translate(-50%, -50%)',
                     width: 4,
                     height: 4,
-                    backgroundColor: '#2196F3',
+                    backgroundColor: theme.palette.primary.main,
                     opacity: isHovered ? 1 : 0.8,
                     borderRadius: '50%',
                     border: '1px solid white',
