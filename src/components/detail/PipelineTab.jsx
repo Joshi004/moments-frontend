@@ -20,6 +20,10 @@ const PipelineTab = ({
   onRefreshHistory,
   isLoadingHistory = false,
 }) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/c977c504-61ab-425e-ac89-91f4eccdb599',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PipelineTab.jsx:24',message:'PipelineTab render - pipelineHistory prop',data:{videoId,pipelineHistoryType:typeof pipelineHistory,isArray:Array.isArray(pipelineHistory),pipelineHistory:pipelineHistory},timestamp:Date.now(),hypothesisId:'H1,H2,H3,H4,H5'})}).catch(()=>{});
+  // #endregion
+  
   // Poll for active pipeline status
   const { status, currentStage, stages, error, totalDuration } = usePipelineStatus(videoId, true);
 

@@ -75,7 +75,7 @@ const InfoTabs = ({
           <Tab label="Overview" id="info-tab-0" aria-controls="info-tabpanel-0" />
           <Tab label="Transcript" id="info-tab-1" aria-controls="info-tabpanel-1" />
           <Tab
-            label={`Pipeline${pipelineHistory.length > 0 ? ` (${pipelineHistory.length})` : ''}`}
+            label={`Pipeline${Array.isArray(pipelineHistory) && pipelineHistory.length > 0 ? ` (${pipelineHistory.length})` : ''}`}
             id="info-tab-2"
             aria-controls="info-tabpanel-2"
           />

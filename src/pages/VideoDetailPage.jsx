@@ -114,10 +114,18 @@ const VideoDetailPage = () => {
         getPipelineHistory(id).catch(() => []),
       ]);
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/c977c504-61ab-425e-ac89-91f4eccdb599',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VideoDetailPage.jsx:117',message:'After Promise.all - historyData',data:{videoId:id,historyDataType:typeof historyData,isArray:Array.isArray(historyData),historyData:historyData},timestamp:Date.now(),hypothesisId:'H1,H2,H3,H5'})}).catch(()=>{});
+      // #endregion
+
       setVideo(videoData);
       setMoments(momentsData);
       setTranscript(transcriptData);
       setPipelineHistory(historyData);
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/c977c504-61ab-425e-ac89-91f4eccdb599',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VideoDetailPage.jsx:128',message:'After setPipelineHistory in fetchVideoData',data:{videoId:id,historyDataType:typeof historyData,isArray:Array.isArray(historyData)},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+      // #endregion
     } catch (err) {
       console.error('Error fetching video data:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to load video');
@@ -138,9 +146,15 @@ const VideoDetailPage = () => {
   const fetchPipelineHistoryData = async () => {
     try {
       const historyData = await getPipelineHistory(id);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/c977c504-61ab-425e-ac89-91f4eccdb599',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VideoDetailPage.jsx:141',message:'fetchPipelineHistoryData - before setState',data:{videoId:id,historyDataType:typeof historyData,isArray:Array.isArray(historyData),historyData:historyData},timestamp:Date.now(),hypothesisId:'H1,H2,H3,H5'})}).catch(()=>{});
+      // #endregion
       setPipelineHistory(historyData);
     } catch (err) {
       console.error('Error fetching pipeline history:', err);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/c977c504-61ab-425e-ac89-91f4eccdb599',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VideoDetailPage.jsx:149',message:'fetchPipelineHistoryData - error caught',data:{videoId:id,error:err.message},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
     }
   };
 
@@ -804,10 +818,11 @@ const VideoDetailPage = () => {
               sx={{
                 flex: { lg: '0 0 340px' },
                 width: { xs: '100%' },
-                maxHeight: { lg: 'calc(100vh - 140px)' },
+                height: { lg: 'calc(100vh - 100px)' },
                 position: { lg: 'sticky' },
                 top: { lg: '80px' },
                 alignSelf: { lg: 'flex-start' },
+                overflow: { lg: 'hidden' },
               }}
             >
               <MomentsSidebar

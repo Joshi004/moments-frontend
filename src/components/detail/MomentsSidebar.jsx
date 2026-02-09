@@ -57,7 +57,7 @@ const MomentsSidebar = ({
       <Paper
         elevation={2}
         sx={{
-          height: '100%',
+          height: '99%',
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 2,
@@ -76,7 +76,7 @@ const MomentsSidebar = ({
     <Paper
       elevation={2}
       sx={{
-        height: '100%',
+        height: '99%',
         display: 'flex',
         flexDirection: 'column',
         borderRadius: 2,
