@@ -1,59 +1,37 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import theme from './theme';
+import AppLayout from './components/layout/AppLayout';
 import HomePage from './pages/HomePage';
 import URLGeneratePage from './pages/URLGeneratePage';
 import PipelineHistoryPage from './pages/PipelineHistoryPage';
 import AdminPage from './pages/AdminPage';
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#FF0000', // YouTube red
-    },
-    secondary: {
-      main: '#606060', // YouTube gray
-    },
-    background: {
-      default: '#FFFFFF',
-      paper: '#FFFFFF',
-    },
-    text: {
-      primary: '#030303',
-      secondary: '#606060',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontWeight: 400,
-    },
-    h3: {
-      fontWeight: 400,
-      fontSize: '1.5rem',
-    },
-    subtitle1: {
-      fontWeight: 500,
-      fontSize: '0.875rem',
-    },
-  },
-  shape: {
-    borderRadius: 8,
-  },
-});
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/url-generate" element={<URLGeneratePage />} />
-          <Route path="/pipeline-history" element={<PipelineHistoryPage />} />
-          <Route path="/admin" element={<AdminPage />} />
-        </Routes>
+        <AppLayout>
+          <Routes>
+            {/* New routes */}
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/videos" element={<HomePage />} />
+            <Route path="/generate" element={<URLGeneratePage />} />
+            <Route path="/pipelines" element={<PipelineHistoryPage />} />
+            <Route path="/settings" element={<AdminPage />} />
+            
+            {/* Redirects from old routes */}
+            <Route path="/url-generate" element={<Navigate to="/generate" replace />} />
+            <Route path="/pipeline-history" element={<Navigate to="/pipelines" replace />} />
+            <Route path="/admin" element={<Navigate to="/settings" replace />} />
+            
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AppLayout>
       </BrowserRouter>
     </ThemeProvider>
   );

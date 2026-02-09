@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Box,
@@ -7,7 +6,6 @@ import {
   TextField,
   Button,
   Paper,
-  IconButton,
   Alert,
   Accordion,
   AccordionSummary,
@@ -20,7 +18,6 @@ import {
   ListItemText,
 } from '@mui/material';
 import {
-  ArrowBack,
   Search,
   ExpandMore,
   CheckCircle,
@@ -82,7 +79,6 @@ const getStatusColor = (status) => {
 };
 
 const PipelineHistoryPage = () => {
-  const navigate = useNavigate();
   const [searchVideoId, setSearchVideoId] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [searchError, setSearchError] = useState(null);
@@ -227,20 +223,10 @@ const PipelineHistoryPage = () => {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <IconButton onClick={() => navigate('/')} size="small">
-            <ArrowBack />
-          </IconButton>
-          <Typography variant="h4" component="h1">
-            Pipeline History
-          </Typography>
-        </Box>
-        <Typography variant="body2" color="text.secondary">
-          Search for pipeline status by video ID or browse recent pipelines
-        </Typography>
-      </Box>
+      {/* Description */}
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+        Search for pipeline status by video ID or browse recent pipelines
+      </Typography>
 
       {/* Search Section */}
       <Paper elevation={1} sx={{ p: 3, mb: 4 }}>

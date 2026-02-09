@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Box,
@@ -7,9 +6,7 @@ import {
   Button,
   Alert,
   CircularProgress,
-  IconButton,
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
 import {
   URLInputSection,
   ConfigurationSection,
@@ -39,8 +36,6 @@ const DEFAULT_CONFIG = {
 };
 
 const URLGeneratePage = () => {
-  const navigate = useNavigate();
-
   // Form state
   const [url, setUrl] = useState('');
   const [forceDownload, setForceDownload] = useState(false);
@@ -223,25 +218,10 @@ const URLGeneratePage = () => {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <IconButton onClick={() => navigate('/')} size="small">
-            <ArrowBack />
-          </IconButton>
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-              Video Moments
-            </Typography>
-            <Typography variant="h6" color="text.secondary">
-              Generate from URL
-            </Typography>
-          </Box>
-        </Box>
-        <Typography variant="body2" color="text.secondary">
-          Paste a video URL to download and generate moments automatically
-        </Typography>
-      </Box>
+      {/* Description */}
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+        Paste a video URL to download and generate moments automatically
+      </Typography>
 
       {/* URL Input Section */}
       {(isIdle || isError) && (
