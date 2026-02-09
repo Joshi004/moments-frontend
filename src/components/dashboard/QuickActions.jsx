@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, Card, CardActionArea, CardContent, Box, Typography } from '@mui/material';
+import { Box, Card, CardActionArea, CardContent, Typography } from '@mui/material';
 import { Link as LinkIcon, VideoLibrary } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,8 +7,19 @@ const QuickActions = () => {
   const navigate = useNavigate();
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12} md={6}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 3,
+      }}
+    >
+      <Box
+        sx={{
+          flex: { xs: '1 1 100%', md: '1 1 0' },
+          minWidth: 0,
+        }}
+      >
         <Card
           sx={{
             height: '100%',
@@ -55,9 +66,14 @@ const QuickActions = () => {
             </CardContent>
           </CardActionArea>
         </Card>
-      </Grid>
+      </Box>
 
-      <Grid item xs={12} md={6}>
+      <Box
+        sx={{
+          flex: { xs: '1 1 100%', md: '1 1 0' },
+          minWidth: 0,
+        }}
+      >
         <Card
           sx={{
             height: '100%',
@@ -104,8 +120,8 @@ const QuickActions = () => {
             </CardContent>
           </CardActionArea>
         </Card>
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   );
 };
 

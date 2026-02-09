@@ -88,63 +88,83 @@ const DashboardPage = () => {
       )}
 
       {/* Row 1: Stat Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          {loading ? (
-            <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
-          ) : (
-            <StatCard
-              icon={<VideoLibrary sx={{ fontSize: 32 }} />}
-              title="Total Videos"
-              value={totalVideos}
-              color="primary"
-              onClick={() => navigate('/videos')}
-            />
-          )}
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          {loading ? (
-            <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
-          ) : (
-            <StatCard
-              icon={<AutoAwesome sx={{ fontSize: 32 }} />}
-              title="Total Moments"
-              value={totalMoments}
-              color="secondary"
-              onClick={() => navigate('/videos')}
-            />
-          )}
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          {loading ? (
-            <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
-          ) : (
-            <StatCard
-              icon={<Timeline sx={{ fontSize: 32 }} />}
-              title="Active Pipelines"
-              value={activePipelineCount}
-              color="warning"
-              onClick={() => navigate('/pipelines')}
-            />
-          )}
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          {loading ? (
-            <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
-          ) : (
-            <StatCard
-              icon={<CheckCircle sx={{ fontSize: 32 }} />}
-              title="System Health"
-              value={healthValue}
-              color={isHealthy ? 'success' : 'error'}
-              onClick={() => navigate('/settings')}
-            />
-          )}
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 3,
+        }}
+      >
+        {[
+          {
+            key: 'videos',
+            content: loading ? (
+              <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+            ) : (
+              <StatCard
+                icon={<VideoLibrary sx={{ fontSize: 32 }} />}
+                title="Total Videos"
+                value={totalVideos}
+                color="primary"
+                onClick={() => navigate('/videos')}
+              />
+            ),
+          },
+          {
+            key: 'moments',
+            content: loading ? (
+              <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+            ) : (
+              <StatCard
+                icon={<AutoAwesome sx={{ fontSize: 32 }} />}
+                title="Total Moments"
+                value={totalMoments}
+                color="secondary"
+                onClick={() => navigate('/videos')}
+              />
+            ),
+          },
+          {
+            key: 'pipelines',
+            content: loading ? (
+              <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+            ) : (
+              <StatCard
+                icon={<Timeline sx={{ fontSize: 32 }} />}
+                title="Active Pipelines"
+                value={activePipelineCount}
+                color="warning"
+                onClick={() => navigate('/pipelines')}
+              />
+            ),
+          },
+          {
+            key: 'health',
+            content: loading ? (
+              <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+            ) : (
+              <StatCard
+                icon={<CheckCircle sx={{ fontSize: 32 }} />}
+                title="System Health"
+                value={healthValue}
+                color={isHealthy ? 'success' : 'error'}
+                onClick={() => navigate('/settings')}
+              />
+            ),
+          },
+        ].map(({ key, content }) => (
+          <Box
+            key={key}
+            sx={{
+              flex: { xs: '1 1 100%', sm: '1 1 0' },
+              minWidth: { xs: 0, sm: 200 },
+            }}
+          >
+            {content}
+          </Box>
+        ))}
+      </Box>
 
       {/* Row 2: Quick Actions */}
       <Box sx={{ mb: 3 }}>
@@ -155,9 +175,20 @@ const DashboardPage = () => {
         )}
       </Box>
 
-      {/* Row 3: Active Pipelines + Recent Activity */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+      {/* Row 3: Active Pipelines (30%) + Recent Videos (70%) */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+        }}
+      >
+        <Box
+          sx={{
+            flex: { xs: '1 1 100%', md: '0 0 30%' },
+            minWidth: { xs: 0, md: 280 },
+          }}
+        >
           {loading ? (
             <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} />
           ) : (
@@ -166,16 +197,21 @@ const DashboardPage = () => {
               initialActivePipelines={activePipelines}
             />
           )}
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} md={6}>
+        <Box
+          sx={{
+            flex: { xs: '1 1 100%', md: 1 },
+            minWidth: 0,
+          }}
+        >
           {loading ? (
             <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} />
           ) : (
             <RecentActivityFeed videos={videos} />
           )}
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 };

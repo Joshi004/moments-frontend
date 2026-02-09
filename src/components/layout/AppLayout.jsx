@@ -74,7 +74,7 @@ const AppLayout = ({ children }) => {
         sx={{
           flexGrow: 1,
           mt: `${TOPBAR_HEIGHT}px`,
-          ml: isMobile ? 0 : (sidebarOpen ? `${SIDEBAR_WIDTH}px` : `${SIDEBAR_COLLAPSED_WIDTH}px`),
+          ml: isMobile ? 0 : '20px',
           transition: theme.transitions.create(['margin-left'], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
@@ -83,9 +83,9 @@ const AppLayout = ({ children }) => {
           pr: { xs: 2, md: 3 },
           pb: { xs: 2, md: 3 },
           pl: { xs: 2, md: 0 },
-          maxWidth: CONTENT_MAX_WIDTH,
           width: '100%',
           bgcolor: 'background.default',
+          borderRadius: '28px',
         }}
       >
         {children}
