@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Typography, Box, Snackbar, Alert, Button } from '@mui/material';
-import { Link as LinkIcon, History } from '@mui/icons-material';
+import { Container, Typography, Box, Snackbar, Alert } from '@mui/material';
 import VideoGrid from '../components/VideoGrid';
 import VideoPlayer from '../components/VideoPlayer';
 import ProcessAudioModal from '../components/ProcessAudioModal';
@@ -10,6 +9,9 @@ import UnifiedPipelineModal from '../components/UnifiedPipelineModal';
 import PipelineProgressModal from '../components/PipelineProgressModal';
 import PipelineConfirmDialog from '../components/PipelineConfirmDialog';
 import DeleteVideoModal from '../components/DeleteVideoModal';
+import PageHeader from '../components/common/PageHeader';
+import LibraryToolbar from '../components/library/LibraryToolbar';
+import useDebounce from '../hooks/useDebounce';
 import { getVideos, processAudio, processTranscript, getAudioExtractionStatus, getTranscriptionStatus, startPipeline, getPipelineStatus, cancelPipeline, deleteVideo } from '../services/api';
 
 const HomePage = () => {
@@ -41,6 +43,17 @@ const HomePage = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Library enhancement state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilters, setActiveFilters] = useState(['all']);
+  const [sortOption, setSortOption] = useState('newest');
+  const [viewMode, setViewMode] = useState(() => {
+    return localStorage.getItem('videoLibraryViewMode') || 'grid';
+  });
+  
+  // Debounce search term
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
     fetchVideos();
@@ -462,34 +475,100 @@ const HomePage = () => {
     }
   };
 
+  // Filter and sort videos
+  const processedVideos = useMemo(() => {
+    let filtered = [...videos];
+
+    // Apply search filter
+    if (debouncedSearchTerm) {
+      const searchLower = debouncedSearchTerm.toLowerCase();
+      filtered = filtered.filter(video => 
+        (video.id && video.id.toLowerCase().includes(searchLower)) ||
+        (video.filename && video.filename.toLowerCase().includes(searchLower)) ||
+        (video.title && video.title.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply status filters (skip if 'all' is active)
+    if (!activeFilters.includes('all')) {
+      filtered = filtered.filter(video => {
+        return activeFilters.some(filter => {
+          switch (filter) {
+            case 'new':
+              return !video.has_audio && !video.has_transcript && (!video.moments || video.moments.length === 0);
+            case 'hasAudio':
+              return video.has_audio === true;
+            case 'hasTranscript':
+              return video.has_transcript === true;
+            case 'hasMoments':
+              return video.moments && video.moments.length > 0;
+            default:
+              return false;
+          }
+        });
+      });
+    }
+
+    // Apply sorting
+    const sorted = [...filtered];
+    switch (sortOption) {
+      case 'oldest':
+        sorted.reverse();
+        break;
+      case 'nameAsc':
+        sorted.sort((a, b) => (a.filename || '').localeCompare(b.filename || ''));
+        break;
+      case 'nameDesc':
+        sorted.sort((a, b) => (b.filename || '').localeCompare(a.filename || ''));
+        break;
+      case 'mostMoments':
+        sorted.sort((a, b) => (b.moments?.length || 0) - (a.moments?.length || 0));
+        break;
+      case 'duration':
+        sorted.sort((a, b) => (b.duration || 0) - (a.duration || 0));
+        break;
+      case 'newest':
+      default:
+        // API returns newest first by default, no additional sorting needed
+        break;
+    }
+
+    return sorted;
+  }, [videos, debouncedSearchTerm, activeFilters, sortOption]);
+
+  // Generate results summary text
+  const resultsSummary = useMemo(() => {
+    const parts = [`Showing ${processedVideos.length} of ${videos.length} videos`];
+    
+    if (debouncedSearchTerm) {
+      parts.push(`Search: "${debouncedSearchTerm}"`);
+    }
+    
+    if (!activeFilters.includes('all')) {
+      const filterLabels = activeFilters.map(filter => {
+        switch (filter) {
+          case 'new': return 'New';
+          case 'hasAudio': return 'Has Audio';
+          case 'hasTranscript': return 'Has Transcript';
+          case 'hasMoments': return 'Has Moments';
+          default: return '';
+        }
+      }).filter(Boolean);
+      
+      if (filterLabels.length > 0) {
+        parts.push(`Filtered by: ${filterLabels.join(', ')}`);
+      }
+    }
+    
+    return parts.join(' • ');
+  }, [processedVideos.length, videos.length, debouncedSearchTerm, activeFilters]);
+
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Box>
-          <Typography variant="h3" component="h1" gutterBottom>
-            Video Moments
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Browse and manage your video collection
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<History />}
-            onClick={() => navigate('/pipeline-history')}
-          >
-            Pipeline History
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<LinkIcon />}
-            onClick={() => navigate('/url-generate')}
-          >
-            Generate from URL
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader
+        title="Video Library"
+        subtitle="Browse, search, and manage your video collection"
+      />
 
       {loading && (
         <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -518,16 +597,38 @@ const HomePage = () => {
       )}
 
       {!loading && !error && !selectedVideo && (
-        <VideoGrid
-          videos={videos}
-          onVideoClick={handleVideoClick}
-          onAudioIconClick={handleAudioIconClick}
-          onTranscriptIconClick={handleTranscriptIconClick}
-          onProcessPipelineClick={handleProcessPipelineClick}
-          onPipelineStatusClick={handlePipelineStatusClick}
-          onDeleteClick={handleDeleteClick}
-          pipelineStatuses={pipelineStatuses}
-        />
+        <>
+          <LibraryToolbar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            activeFilters={activeFilters}
+            onFilterChange={setActiveFilters}
+            sortOption={sortOption}
+            onSortChange={setSortOption}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
+
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 2 }}
+          >
+            {resultsSummary}
+          </Typography>
+
+          <VideoGrid
+            videos={processedVideos}
+            viewMode={viewMode}
+            onVideoClick={handleVideoClick}
+            onAudioIconClick={handleAudioIconClick}
+            onTranscriptIconClick={handleTranscriptIconClick}
+            onProcessPipelineClick={handleProcessPipelineClick}
+            onPipelineStatusClick={handlePipelineStatusClick}
+            onDeleteClick={handleDeleteClick}
+            pipelineStatuses={pipelineStatuses}
+          />
+        </>
       )}
 
       <ProcessAudioModal

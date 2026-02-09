@@ -1,26 +1,59 @@
 import React from 'react';
-import { Grid, Box, Typography } from '@mui/material';
+import { Stack, Box } from '@mui/material';
+import { VideoLibrary as VideoLibraryIcon } from '@mui/icons-material';
 import VideoCard from './VideoCard';
+import VideoListItem from './library/VideoListItem';
+import EmptyState from './common/EmptyState';
 
-const VideoGrid = ({ videos, onVideoClick, onAudioIconClick, onTranscriptIconClick, onProcessPipelineClick, onPipelineStatusClick, onDeleteClick, pipelineStatuses }) => {
+const VideoGrid = ({ 
+  videos, 
+  viewMode = 'grid',
+  onVideoClick, 
+  onAudioIconClick, 
+  onTranscriptIconClick, 
+  onProcessPipelineClick, 
+  onPipelineStatusClick, 
+  onDeleteClick, 
+  pipelineStatuses 
+}) => {
   if (!videos || videos.length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 8 }}>
-        <Typography variant="h6" color="text.secondary">
-          No videos available
-        </Typography>
-      </Box>
+      <EmptyState
+        icon={<VideoLibraryIcon />}
+        title="No videos found"
+        message="Try adjusting your search or filters"
+      />
     );
   }
 
+  // List view mode
+  if (viewMode === 'list') {
+    return (
+      <Stack spacing={1}>
+        {videos.map((video) => (
+          <VideoListItem
+            key={video.id}
+            video={video} 
+            onClick={() => onVideoClick(video)} 
+            onAudioIconClick={onAudioIconClick}
+            onTranscriptIconClick={onTranscriptIconClick}
+            onProcessPipelineClick={onProcessPipelineClick}
+            onPipelineStatusClick={onPipelineStatusClick}
+            onDeleteClick={onDeleteClick}
+            pipelineStatus={pipelineStatuses?.[video.id]}
+          />
+        ))}
+      </Stack>
+    );
+  }
+
+  // Grid view mode (default)
   return (
     <Box
       sx={{
         display: 'flex',
         flexWrap: 'wrap',
         gap: 2,
-        py: { xs: 2, sm: 3 },
-        px: { xs: 1, sm: 2 },
         justifyContent: 'flex-start',
       }}
     >
