@@ -1,15 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Box, Typography, Snackbar, Alert, Skeleton, Button } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import DetailPageHeader from '../components/detail/DetailPageHeader';
 import VideoPlayer from '../components/VideoPlayer';
 import MomentsSidebar from '../components/detail/MomentsSidebar';
+import InfoTabs from '../components/detail/InfoTabs';
 import GenerateMomentsModal from '../components/GenerateMomentsModal';
 import AddMomentDialog from '../components/AddMomentDialog';
 import RefineMomentModal from '../components/RefineMomentModal';
 import ExtractClipsModal from '../components/ExtractClipsModal';
 import MomentConfigDrawer from '../components/MomentConfigDrawer';
+import ProcessAudioModal from '../components/ProcessAudioModal';
+import ProcessTranscriptModal from '../components/ProcessTranscriptModal';
+import UnifiedPipelineModal from '../components/UnifiedPipelineModal';
+import PipelineConfirmDialog from '../components/PipelineConfirmDialog';
 import {
   getVideo,
   getVideos,
@@ -23,17 +28,26 @@ import {
   getRefinementStatus,
   extractClips,
   getClipExtractionStatus,
+  processAudio,
+  getAudioExtractionStatus,
+  processTranscript,
+  getTranscriptionStatus,
+  startPipeline,
+  cancelPipeline,
+  getPipelineHistory,
 } from '../services/api';
 
 const VideoDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const playerRef = useRef(null);
 
   // Data state
   const [video, setVideo] = useState(null);
   const [videos, setVideos] = useState([]);
   const [moments, setMoments] = useState([]);
   const [transcript, setTranscript] = useState(null);
+  const [pipelineHistory, setPipelineHistory] = useState([]);
   const [currentTime, setCurrentTime] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,6 +58,11 @@ const VideoDetailPage = () => {
   const [refineModalOpen, setRefineModalOpen] = useState(false);
   const [extractClipsModalOpen, setExtractClipsModalOpen] = useState(false);
   const [configDrawerOpen, setConfigDrawerOpen] = useState(false);
+  const [processAudioModalOpen, setProcessAudioModalOpen] = useState(false);
+  const [processTranscriptModalOpen, setProcessTranscriptModalOpen] = useState(false);
+  const [pipelineModalOpen, setPipelineModalOpen] = useState(false);
+  const [pipelineConfirmDialogOpen, setPipelineConfirmDialogOpen] = useState(false);
+  const [confirmDialogConfig, setConfirmDialogConfig] = useState({});
 
   // Modal data
   const [momentToRefine, setMomentToRefine] = useState(null);
@@ -57,6 +76,10 @@ const VideoDetailPage = () => {
   const [refinementPollInterval, setRefinementPollInterval] = useState(null);
   const [isExtractingClips, setIsExtractingClips] = useState(false);
   const [extractionPollInterval, setExtractionPollInterval] = useState(null);
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const [audioPollInterval, setAudioPollInterval] = useState(null);
+  const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
+  const [transcriptPollInterval, setTranscriptPollInterval] = useState(null);
 
   // Snackbar
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -65,6 +88,7 @@ const VideoDetailPage = () => {
   useEffect(() => {
     fetchVideoData();
     fetchAllVideos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // Cleanup polling intervals on unmount
@@ -73,28 +97,50 @@ const VideoDetailPage = () => {
       if (generationPollInterval) clearInterval(generationPollInterval);
       if (refinementPollInterval) clearInterval(refinementPollInterval);
       if (extractionPollInterval) clearInterval(extractionPollInterval);
+      if (audioPollInterval) clearInterval(audioPollInterval);
+      if (transcriptPollInterval) clearInterval(transcriptPollInterval);
     };
-  }, [generationPollInterval, refinementPollInterval, extractionPollInterval]);
+  }, [generationPollInterval, refinementPollInterval, extractionPollInterval, audioPollInterval, transcriptPollInterval]);
 
   const fetchVideoData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [videoData, momentsData, transcriptData] = await Promise.all([
+      const [videoData, momentsData, transcriptData, historyData] = await Promise.all([
         getVideo(id),
         getMoments(id).catch(() => []),
         getTranscript(id).catch(() => null),
+        getPipelineHistory(id).catch(() => []),
       ]);
 
       setVideo(videoData);
       setMoments(momentsData);
       setTranscript(transcriptData);
+      setPipelineHistory(historyData);
     } catch (err) {
       console.error('Error fetching video data:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to load video');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshVideoData = async () => {
+    try {
+      const videoData = await getVideo(id);
+      setVideo(videoData);
+    } catch (err) {
+      console.error('Error refreshing video data:', err);
+    }
+  };
+
+  const fetchPipelineHistoryData = async () => {
+    try {
+      const historyData = await getPipelineHistory(id);
+      setPipelineHistory(historyData);
+    } catch (err) {
+      console.error('Error fetching pipeline history:', err);
     }
   };
 
@@ -144,10 +190,16 @@ const VideoDetailPage = () => {
 
   // Moment click - seek video
   const handleMomentClick = (startTime) => {
-    setCurrentTime(startTime);
-    // The VideoPlayer will respond to this via its own useEffect watching currentTime
-    // But we need a way to actually seek - we'll handle this differently
-    // For now, this is a limitation - we'd need to expose a ref or callback
+    if (playerRef.current) {
+      playerRef.current.seekTo(startTime);
+    }
+  };
+
+  // Seek to specific time (for transcript tab)
+  const handleSeekTo = (time) => {
+    if (playerRef.current) {
+      playerRef.current.seekTo(time);
+    }
   };
 
   // Generate moments handlers
@@ -429,6 +481,221 @@ const VideoDetailPage = () => {
     }, 200);
   };
 
+  // Audio processing handlers
+  const handleProcessAudioClick = () => {
+    setProcessAudioModalOpen(true);
+  };
+
+  const handleProcessAudio = async (videoId) => {
+    try {
+      setIsProcessingAudio(true);
+      setSnackbar({ open: false, message: '', severity: 'info' });
+
+      await processAudio(videoId);
+
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await getAudioExtractionStatus(videoId);
+
+          if (status && status.status === 'completed') {
+            clearInterval(pollInterval);
+            setAudioPollInterval(null);
+            setIsProcessingAudio(false);
+            setProcessAudioModalOpen(false);
+
+            await refreshVideoData();
+
+            setSnackbar({
+              open: true,
+              message: 'Audio extracted successfully!',
+              severity: 'success',
+            });
+          } else if (status && status.status === 'failed') {
+            clearInterval(pollInterval);
+            setAudioPollInterval(null);
+            setIsProcessingAudio(false);
+
+            const errorMsg = status.error || 'Audio extraction failed. Please try again.';
+            setSnackbar({
+              open: true,
+              message: errorMsg,
+              severity: 'error',
+            });
+          }
+        } catch (error) {
+          console.error('Error polling audio extraction status:', error);
+        }
+      }, 2000);
+
+      setAudioPollInterval(pollInterval);
+
+      setTimeout(() => {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          setAudioPollInterval(null);
+          if (isProcessingAudio) {
+            setIsProcessingAudio(false);
+            setSnackbar({
+              open: true,
+              message: 'Audio extraction timeout. Please check the status manually.',
+              severity: 'warning',
+            });
+          }
+        }
+      }, 15 * 60 * 1000);
+    } catch (error) {
+      console.error('Error processing audio:', error);
+      setIsProcessingAudio(false);
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start audio extraction';
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
+  };
+
+  // Transcript processing handlers
+  const handleProcessTranscriptClick = () => {
+    setProcessTranscriptModalOpen(true);
+  };
+
+  const handleProcessTranscript = async (videoId) => {
+    try {
+      setIsProcessingTranscript(true);
+      setSnackbar({ open: false, message: '', severity: 'info' });
+
+      await processTranscript(videoId);
+
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await getTranscriptionStatus(videoId);
+
+          if (status && status.status === 'completed') {
+            clearInterval(pollInterval);
+            setTranscriptPollInterval(null);
+            setIsProcessingTranscript(false);
+            setProcessTranscriptModalOpen(false);
+
+            const transcriptData = await getTranscript(id);
+            setTranscript(transcriptData);
+            await refreshVideoData();
+
+            setSnackbar({
+              open: true,
+              message: 'Transcript generated successfully!',
+              severity: 'success',
+            });
+          } else if (status && status.status === 'failed') {
+            clearInterval(pollInterval);
+            setTranscriptPollInterval(null);
+            setIsProcessingTranscript(false);
+
+            const errorMsg = status.error || 'Transcription failed. Please try again.';
+            setSnackbar({
+              open: true,
+              message: errorMsg,
+              severity: 'error',
+            });
+          }
+        } catch (error) {
+          console.error('Error polling transcription status:', error);
+        }
+      }, 2000);
+
+      setTranscriptPollInterval(pollInterval);
+
+      setTimeout(() => {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          setTranscriptPollInterval(null);
+          if (isProcessingTranscript) {
+            setIsProcessingTranscript(false);
+            setSnackbar({
+              open: true,
+              message: 'Transcription timeout. Please check the status manually.',
+              severity: 'warning',
+            });
+          }
+        }
+      }, 15 * 60 * 1000);
+    } catch (error) {
+      console.error('Error processing transcript:', error);
+      setIsProcessingTranscript(false);
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start transcription';
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
+  };
+
+  // Pipeline handlers
+  const handleRunPipelineClick = () => {
+    if (moments && moments.length > 0) {
+      setConfirmDialogConfig({
+        title: 'Moments Already Exist',
+        message: `This video already has ${moments.length} moment(s). Do you want to regenerate them?`,
+        onConfirm: () => {
+          setPipelineConfirmDialogOpen(false);
+          setPipelineModalOpen(true);
+        }
+      });
+      setPipelineConfirmDialogOpen(true);
+    } else {
+      setPipelineModalOpen(true);
+    }
+  };
+
+  const handleStartPipeline = async (config) => {
+    try {
+      await startPipeline(id, config);
+      
+      setPipelineModalOpen(false);
+      setSnackbar({
+        open: true,
+        message: 'Pipeline started successfully!',
+        severity: 'success',
+      });
+
+      // Refresh history after a delay to allow pipeline to initialize
+      setTimeout(() => {
+        fetchPipelineHistoryData();
+      }, 2000);
+    } catch (error) {
+      console.error('Error starting pipeline:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to start pipeline';
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleCancelPipeline = async () => {
+    try {
+      await cancelPipeline(id);
+      setSnackbar({
+        open: true,
+        message: 'Pipeline cancellation requested',
+        severity: 'info',
+      });
+      
+      setTimeout(() => {
+        fetchPipelineHistoryData();
+      }, 1000);
+    } catch (error) {
+      console.error('Error cancelling pipeline:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to cancel pipeline',
+        severity: 'error',
+      });
+    }
+  };
+
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
   };
@@ -485,6 +752,7 @@ const VideoDetailPage = () => {
             {/* Player - 65% on desktop */}
             <Box sx={{ flex: { lg: '0 0 65%' }, width: { xs: '100%' } }}>
               <VideoPlayer
+                ref={playerRef}
                 video={video}
                 moments={moments}
                 transcript={transcript}
@@ -520,20 +788,34 @@ const VideoDetailPage = () => {
             </Box>
           </Box>
 
-          {/* Phase 4 placeholder */}
-          <Box
-            sx={{
-              mt: 3,
-              p: 3,
-              border: '1px dashed',
-              borderColor: 'divider',
-              borderRadius: 2,
-              textAlign: 'center',
-            }}
-          >
-            <Typography color="text.secondary">
-              Info tabs coming in Phase 4 (Overview, Transcript, Pipeline, Clips)
-            </Typography>
+          {/* Info Tabs Panel */}
+          <Box sx={{ mt: 3 }}>
+            <InfoTabs
+              video={video}
+              moments={moments}
+              transcript={transcript}
+              currentTime={currentTime}
+              pipelineHistory={pipelineHistory}
+              // Overview tab handlers
+              onProcessAudio={handleProcessAudioClick}
+              onProcessTranscript={handleProcessTranscriptClick}
+              onGenerateMoments={handleGenerateClick}
+              onExtractClips={handleExtractClipsClick}
+              onRunPipeline={handleRunPipelineClick}
+              // Processing states
+              isProcessingAudio={isProcessingAudio}
+              isProcessingTranscript={isProcessingTranscript}
+              isGeneratingMoments={isGeneratingMoments}
+              isExtractingClips={isExtractingClips}
+              // Transcript tab handlers
+              onSeekTo={handleSeekTo}
+              onGenerateTranscript={handleProcessTranscriptClick}
+              // Pipeline tab handlers
+              onStartPipeline={handleRunPipelineClick}
+              onCancelPipeline={handleCancelPipeline}
+              onRefreshHistory={fetchPipelineHistoryData}
+              isLoadingHistory={loading}
+            />
           </Box>
         </>
       )}
@@ -585,6 +867,37 @@ const VideoDetailPage = () => {
         onClose={handleConfigDrawerClose}
         config={selectedConfig}
         momentTitle={selectedMomentTitle}
+      />
+
+      <ProcessAudioModal
+        open={processAudioModalOpen}
+        onClose={() => setProcessAudioModalOpen(false)}
+        video={video}
+        onProcess={handleProcessAudio}
+        isProcessing={isProcessingAudio}
+      />
+
+      <ProcessTranscriptModal
+        open={processTranscriptModalOpen}
+        onClose={() => setProcessTranscriptModalOpen(false)}
+        video={video}
+        onProcess={handleProcessTranscript}
+        isProcessing={isProcessingTranscript}
+      />
+
+      <UnifiedPipelineModal
+        open={pipelineModalOpen}
+        onClose={() => setPipelineModalOpen(false)}
+        video={video}
+        onStart={handleStartPipeline}
+      />
+
+      <PipelineConfirmDialog
+        open={pipelineConfirmDialogOpen}
+        onClose={setPipelineConfirmDialogOpen}
+        onConfirm={confirmDialogConfig.onConfirm}
+        title={confirmDialogConfig.title}
+        message={confirmDialogConfig.message}
       />
 
       {/* Snackbar */}

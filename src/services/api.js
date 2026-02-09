@@ -421,6 +421,22 @@ export const getDefaultConfigs = async () => {
   }
 };
 
+// Health Check
+export const checkHealth = async () => {
+  try {
+    const response = await axios.get(`${getBackendBaseUrl()}/health`, { timeout: 5000 });
+    return response.data;
+  } catch (error) {
+    // Try the /api base as fallback
+    try {
+      const response = await api.get('/health', { timeout: 5000 });
+      return response.data;
+    } catch {
+      return { status: 'error', message: 'Backend unreachable' };
+    }
+  }
+};
+
 export default api;
 
 

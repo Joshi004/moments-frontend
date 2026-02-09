@@ -5,7 +5,7 @@ import theme from './theme';
 import AppLayout from './components/layout/AppLayout';
 import HomePage from './pages/HomePage';
 import URLGeneratePage from './pages/URLGeneratePage';
-import PipelineHistoryPage from './pages/PipelineHistoryPage';
+import PipelineMonitorPage from './pages/PipelineMonitorPage';
 import AdminPage from './pages/AdminPage';
 import DashboardPage from './pages/DashboardPage';
 import VideoDetailPage from './pages/VideoDetailPage';
@@ -22,7 +22,7 @@ function App() {
             <Route path="/videos/:id" element={<VideoDetailPage />} />
             <Route path="/videos" element={<HomePage />} />
             <Route path="/generate" element={<URLGeneratePage />} />
-            <Route path="/pipelines" element={<PipelineHistoryPage />} />
+            <Route path="/pipelines" element={<PipelineMonitorPage />} />
             <Route path="/settings" element={<AdminPage />} />
             
             {/* Redirects from old routes */}

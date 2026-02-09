@@ -1,10 +1,10 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef } from 'react';
 import { Box } from '@mui/material';
 import VideoControls from './VideoControls';
 import VideoCaptions from './VideoCaptions';
 import { getVideoStreamUrl } from '../services/api';
 
-const VideoPlayer = ({
+const VideoPlayer = forwardRef(({
   video,
   moments = [],
   transcript = null,
@@ -13,9 +13,20 @@ const VideoPlayer = ({
   onNext,
   hasPrevious = false,
   hasNext = false,
-}) => {
+}, ref) => {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
+
+  // Expose seekTo method via ref
+  useImperativeHandle(ref, () => ({
+    seekTo: (time) => {
+      if (videoRef.current) {
+        const clampedTime = Math.max(0, Math.min(time, videoRef.current.duration || 0));
+        videoRef.current.currentTime = clampedTime;
+        setCurrentTime(clampedTime);
+      }
+    },
+  }));
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -367,6 +378,8 @@ const VideoPlayer = ({
       </Box>
     </Box>
   );
-};
+});
+
+VideoPlayer.displayName = 'VideoPlayer';
 
 export default VideoPlayer;

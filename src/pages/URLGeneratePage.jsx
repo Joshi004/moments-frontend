@@ -152,22 +152,6 @@ const URLGeneratePage = () => {
       setRequestId(response.request_id);
       setIsCached(response.is_cached);
 
-      // Track in localStorage for history
-      try {
-        const recentVideos = JSON.parse(localStorage.getItem('recentPipelineVideos') || '[]');
-        const newEntry = {
-          video_id: response.video_id,
-          request_id: response.request_id,
-          timestamp: Date.now(),
-          url: url,
-        };
-        // Add to front and keep only last 20
-        const updated = [newEntry, ...recentVideos.filter(v => v.video_id !== response.video_id)].slice(0, 20);
-        localStorage.setItem('recentPipelineVideos', JSON.stringify(updated));
-      } catch (storageErr) {
-        console.error('Failed to store in localStorage:', storageErr);
-      }
-
       // Update page state
       if (response.download_required) {
         setPageState('processing'); // Will show download progress
