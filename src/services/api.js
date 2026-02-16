@@ -86,6 +86,16 @@ export const getThumbnailUrl = (videoId) => {
   return `${getApiBaseUrl()}/videos/${videoId}/thumbnail`;
 };
 
+export const getVideoUrl = async (videoId) => {
+  try {
+    const response = await api.get(`/videos/${videoId}/url`);
+    return response.data;  // { url: "...", expires_in_seconds: 14400 }
+  } catch (error) {
+    console.error('Error fetching video URL:', error);
+    throw error;
+  }
+};
+
 export const getMoments = async (videoId) => {
   try {
     const response = await api.get(`/videos/${videoId}/moments`);

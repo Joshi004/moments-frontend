@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef } from 'react';
+import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { Box } from '@mui/material';
 import VideoControls from './VideoControls';
 import VideoCaptions from './VideoCaptions';
-import { getVideoStreamUrl } from '../services/api';
+import { getVideoUrl } from '../services/api';
 
 const VideoPlayer = forwardRef(({
   video,
@@ -16,6 +16,7 @@ const VideoPlayer = forwardRef(({
 }, ref) => {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
+  const refreshTimerRef = useRef(null);
 
   // Expose seekTo method via ref
   useImperativeHandle(ref, () => ({
@@ -27,6 +28,8 @@ const VideoPlayer = forwardRef(({
       }
     },
   }));
+  
+  // State for video playback
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -35,12 +38,161 @@ const VideoPlayer = forwardRef(({
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [currentCaptionText, setCurrentCaptionText] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  // State for URL lifecycle management
+  const [videoSrc, setVideoSrc] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Proactive URL refresh function
+  const refreshUrl = useCallback(async () => {
+    if (!video || !videoRef.current) return;
+    
+    try {
+      console.log('Refreshing video URL (proactive refresh)');
+      
+      // Save current playback state
+      const savedTime = videoRef.current.currentTime;
+      const wasPlaying = !videoRef.current.paused;
+      
+      // Fetch fresh URL
+      const { url, expires_in_seconds } = await getVideoUrl(video.id);
+      
+      // Update video source
+      setVideoSrc(url);
+      
+      // Wait for video to load new source
+      const handleLoadedData = () => {
+        // Restore playback position
+        videoRef.current.currentTime = savedTime;
+        
+        // Resume playback if it was playing
+        if (wasPlaying) {
+          videoRef.current.play().catch(err => {
+            console.error('Error resuming playback after URL refresh:', err);
+          });
+        }
+        
+        videoRef.current.removeEventListener('loadeddata', handleLoadedData);
+      };
+      
+      videoRef.current.addEventListener('loadeddata', handleLoadedData);
+      videoRef.current.load();
+      
+      // Set up next refresh timer (5 minutes before expiry)
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+      const refreshDelayMs = (expires_in_seconds - 300) * 1000;
+      refreshTimerRef.current = setTimeout(refreshUrl, refreshDelayMs);
+      
+      console.log(`URL refreshed. Next refresh in ${refreshDelayMs / 1000 / 60} minutes`);
+    } catch (error) {
+      console.error('Error refreshing video URL:', error);
+    }
+  }, [video]);
+
+  // Error recovery handler (fallback for expired URLs)
+  const handleVideoError = useCallback(async () => {
+    if (!video || !videoRef.current) return;
+    
+    // Limit retries to prevent infinite loops
+    if (retryCount >= 3) {
+      console.error('Max retry attempts reached. Video URL may be permanently unavailable.');
+      return;
+    }
+    
+    try {
+      console.log(`Video error detected (retry ${retryCount + 1}/3). Fetching fresh URL...`);
+      
+      // Save current playback state
+      const savedTime = videoRef.current.currentTime;
+      const wasPlaying = !videoRef.current.paused;
+      
+      // Fetch fresh URL
+      const { url, expires_in_seconds } = await getVideoUrl(video.id);
+      
+      // Update video source
+      setVideoSrc(url);
+      setRetryCount(prev => prev + 1);
+      
+      // Wait for video to load new source
+      const handleLoadedData = () => {
+        // Restore playback position
+        videoRef.current.currentTime = savedTime;
+        
+        // Resume playback if it was playing
+        if (wasPlaying) {
+          videoRef.current.play().catch(err => {
+            console.error('Error resuming playback after error recovery:', err);
+          });
+        }
+        
+        videoRef.current.removeEventListener('loadeddata', handleLoadedData);
+      };
+      
+      videoRef.current.addEventListener('loadeddata', handleLoadedData);
+      videoRef.current.load();
+      
+      // Reset refresh timer for the new URL
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+      const refreshDelayMs = (expires_in_seconds - 300) * 1000;
+      refreshTimerRef.current = setTimeout(refreshUrl, refreshDelayMs);
+      
+      console.log('Video URL recovered successfully');
+    } catch (error) {
+      console.error('Error recovering from video error:', error);
+    }
+  }, [video, retryCount, refreshUrl]);
+
+  // Initial URL fetch and timer setup
+  useEffect(() => {
+    if (!video) return;
+    
+    const loadVideoUrl = async () => {
+      try {
+        console.log('Loading video URL for:', video.id);
+        
+        // Fetch initial URL
+        const { url, expires_in_seconds } = await getVideoUrl(video.id);
+        
+        // Set video source
+        setVideoSrc(url);
+        
+        // Reset retry count for new video
+        setRetryCount(0);
+        
+        // Clear any existing timer
+        if (refreshTimerRef.current) {
+          clearTimeout(refreshTimerRef.current);
+        }
+        
+        // Set up proactive refresh timer (5 minutes before expiry)
+        const refreshDelayMs = (expires_in_seconds - 300) * 1000;
+        refreshTimerRef.current = setTimeout(refreshUrl, refreshDelayMs);
+        
+        console.log(`Video URL loaded. Expires in ${expires_in_seconds / 60} minutes. Refresh scheduled in ${refreshDelayMs / 1000 / 60} minutes.`);
+      } catch (error) {
+        console.error('Error loading video URL:', error);
+      }
+    };
+    
+    loadVideoUrl();
+    
+    // Cleanup on unmount or video change
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+    };
+  }, [video, refreshUrl]);
 
   useEffect(() => {
     if (video) {
       const videoElement = videoRef.current;
       if (videoElement) {
-        videoElement.load();
         videoElement.volume = volume / 100;
         videoElement.muted = isMuted;
       }
@@ -333,7 +485,7 @@ const VideoPlayer = forwardRef(({
       >
         <video
           ref={videoRef}
-          src={getVideoStreamUrl(video.id)}
+          src={videoSrc}
           controls={false}
           style={{
             width: '100%',
@@ -346,6 +498,7 @@ const VideoPlayer = forwardRef(({
               setDuration(videoRef.current.duration);
             }
           }}
+          onError={handleVideoError}
         />
 
         <VideoControls
