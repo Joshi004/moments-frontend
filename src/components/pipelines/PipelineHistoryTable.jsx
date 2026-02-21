@@ -60,9 +60,9 @@ const PipelineHistoryTable = ({ historyData = [], videos = [], loading = false }
     result.sort((a, b) => {
       switch (sortBy) {
         case 'started_desc':
-          return new Date(b.start_time) - new Date(a.start_time);
+          return new Date(b.started_at) - new Date(a.started_at);
         case 'started_asc':
-          return new Date(a.start_time) - new Date(b.start_time);
+          return new Date(a.started_at) - new Date(b.started_at);
         case 'duration_desc':
           return (b.total_duration_seconds || 0) - (a.total_duration_seconds || 0);
         case 'duration_asc':
@@ -192,7 +192,7 @@ const PipelineHistoryTable = ({ historyData = [], videos = [], loading = false }
         <Box>
           {visibleData.map((item, index) => (
             <PipelineHistoryRow
-              key={`${item.video_id}-${item.start_time}-${index}`}
+              key={`${item.video_id}-${item.started_at}-${index}`}
               run={item}
               videoFilename={videoMap.get(item.video_id)}
               defaultExpanded={false}

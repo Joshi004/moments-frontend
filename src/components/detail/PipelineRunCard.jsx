@@ -20,7 +20,7 @@ const PipelineRunCard = ({ run, defaultExpanded = false }) => {
 
   const {
     status,
-    start_time,
+    started_at: start_time,
     total_duration_seconds,
     stages = {},
     config = {},

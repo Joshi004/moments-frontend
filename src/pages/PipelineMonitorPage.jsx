@@ -97,7 +97,7 @@ const PipelineMonitorPage = () => {
       });
 
       // Sort by start time (newest first)
-      allHistory.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+      allHistory.sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
 
       setPipelineHistory(allHistory);
       setHistoryLoading(false);
@@ -152,7 +152,7 @@ const PipelineMonitorPage = () => {
                 const filtered = prev.filter((item) => item.video_id !== videoId);
                 const newEntries = history.map((run) => ({ ...run, video_id: videoId }));
                 const combined = [...newEntries, ...filtered];
-                combined.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+                combined.sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
                 return combined;
               });
             }
@@ -193,7 +193,7 @@ const PipelineMonitorPage = () => {
           const filtered = prev.filter((item) => item.video_id !== videoId);
           const newEntries = history.map((run) => ({ ...run, video_id: videoId }));
           const combined = [...newEntries, ...filtered];
-          combined.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+          combined.sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
           return combined;
         });
       }

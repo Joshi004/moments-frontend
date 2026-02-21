@@ -23,11 +23,14 @@ const PipelineHistoryRow = ({ run, videoFilename, defaultExpanded = false }) => 
   const {
     video_id: videoId,
     status,
-    start_time: startTime,
+    started_at: startTime,
     total_duration_seconds: totalDuration,
     stages = {},
     config = {},
     error_message: errorMessage,
+    pipeline_type: pipelineType,
+    total_moments_generated: totalMoments,
+    total_clips_created: totalClips,
   } = run;
 
   // Calculate border color based on status
@@ -134,7 +137,22 @@ const PipelineHistoryRow = ({ run, videoFilename, defaultExpanded = false }) => 
           </Box>
         )}
 
-        {/* Configuration Summary */}
+        {/* Run Summary (DB-backed fields) */}
+        <Box sx={{ mb: 2 }}>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {pipelineType && (
+              <Chip label={`Type: ${pipelineType}`} size="small" color="info" variant="outlined" />
+            )}
+            {totalMoments != null && (
+              <Chip label={`Moments: ${totalMoments}`} size="small" variant="outlined" />
+            )}
+            {totalClips != null && (
+              <Chip label={`Clips: ${totalClips}`} size="small" variant="outlined" />
+            )}
+          </Stack>
+        </Box>
+
+        {/* Configuration Summary (from legacy Redis history; not available for DB-only records) */}
         {config && Object.keys(config).length > 0 && (
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
@@ -157,7 +175,8 @@ const PipelineHistoryRow = ({ run, videoFilename, defaultExpanded = false }) => 
           </Box>
         )}
 
-        {/* Stage-by-stage breakdown */}
+        {/* Stage-by-stage breakdown (only available for recent runs still in Redis cache) */}
+        {Object.keys(stages).length > 0 && (
         <Box>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
             Pipeline Stages
@@ -255,6 +274,7 @@ const PipelineHistoryRow = ({ run, videoFilename, defaultExpanded = false }) => 
             })}
           </Stack>
         </Box>
+        )}
       </AccordionDetails>
     </Accordion>
   );
