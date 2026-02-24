@@ -126,26 +126,6 @@ export const deleteMoment = async (videoId, momentId) => {
   }
 };
 
-export const processAudio = async (videoId) => {
-  try {
-    const response = await api.post(`/videos/${videoId}/process-audio`);
-    return response.data;
-  } catch (error) {
-    console.error('Error processing audio:', error);
-    throw error;
-  }
-};
-
-export const processTranscript = async (videoId) => {
-  try {
-    const response = await api.post(`/videos/${videoId}/process-transcript`);
-    return response.data;
-  } catch (error) {
-    console.error('Error processing transcript:', error);
-    throw error;
-  }
-};
-
 export const getTranscript = async (videoId) => {
   try {
     const response = await api.get(`/videos/${videoId}/transcript`);
@@ -156,92 +136,12 @@ export const getTranscript = async (videoId) => {
   }
 };
 
-export const generateMoments = async (videoId, config) => {
-  try {
-    const response = await api.post(`/videos/${videoId}/generate-moments`, config);
-    return response.data;
-  } catch (error) {
-    console.error('Error generating moments:', error);
-    throw error;
-  }
-};
-
-export const getGenerationStatus = async (videoId) => {
-  try {
-    const response = await api.get(`/videos/${videoId}/generation-status`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching generation status:', error);
-    throw error;
-  }
-};
-
-export const refineMoment = async (videoId, momentId, config) => {
-  try {
-    const response = await api.post(`/videos/${videoId}/moments/${momentId}/refine`, config);
-    return response.data;
-  } catch (error) {
-    console.error('Error refining moment:', error);
-    throw error;
-  }
-};
-
-export const getRefinementStatus = async (videoId, momentId) => {
-  try {
-    const response = await api.get(`/videos/${videoId}/refinement-status/${momentId}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching refinement status:', error);
-    throw error;
-  }
-};
-
 export const checkVideoAvailability = async (videoId, momentId) => {
   try {
     const response = await api.get(`/videos/${videoId}/moments/${momentId}/video-availability`);
     return response.data;
   } catch (error) {
     console.error('Error checking video availability:', error);
-    throw error;
-  }
-};
-
-export const extractClips = async (videoId, config) => {
-  try {
-    const response = await api.post(`/videos/${videoId}/extract-clips`, config);
-    return response.data;
-  } catch (error) {
-    console.error('Error extracting clips:', error);
-    throw error;
-  }
-};
-
-export const getClipExtractionStatus = async (videoId) => {
-  try {
-    const response = await api.get(`/videos/${videoId}/clip-extraction-status`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching clip extraction status:', error);
-    throw error;
-  }
-};
-
-export const getAudioExtractionStatus = async (videoId) => {
-  try {
-    const response = await api.get(`/videos/${videoId}/audio-extraction-status`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching audio extraction status:', error);
-    throw error;
-  }
-};
-
-export const getTranscriptionStatus = async (videoId) => {
-  try {
-    const response = await api.get(`/videos/${videoId}/transcription-status`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching transcription status:', error);
     throw error;
   }
 };
