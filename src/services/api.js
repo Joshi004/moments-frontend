@@ -149,7 +149,7 @@ export const checkVideoAvailability = async (videoId, momentId) => {
 // Pipeline API
 export const startPipeline = async (videoId, config) => {
   try {
-    const response = await api.post(`/pipeline/${videoId}/start`, config);
+    const response = await api.post('/pipeline/start', { video_id: videoId, ...config });
     return response.data;
   } catch (error) {
     console.error('Error starting pipeline:', error);
@@ -180,16 +180,10 @@ export const cancelPipeline = async (videoId) => {
 export const getPipelineHistory = async (videoId) => {
   try {
     const response = await api.get(`/pipeline/${videoId}/history`);
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/c977c504-61ab-425e-ac89-91f4eccdb599',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:272',message:'getPipelineHistory API response',data:{videoId,responseType:typeof response.data,isArray:Array.isArray(response.data),responseData:response.data,extractedRuns:response.data?.runs},timestamp:Date.now(),hypothesisId:'FIX',runId:'post-fix'})}).catch(()=>{});
-    // #endregion
     // API returns {video_id, runs: [], count: 0}, extract the runs array
     return response.data?.runs || [];
   } catch (error) {
     console.error('Error fetching pipeline history:', error);
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/c977c504-61ab-425e-ac89-91f4eccdb599',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:280',message:'getPipelineHistory API error',data:{videoId,error:error.message},timestamp:Date.now(),hypothesisId:'FIX',runId:'post-fix'})}).catch(()=>{});
-    // #endregion
     throw error;
   }
 };
@@ -197,7 +191,7 @@ export const getPipelineHistory = async (videoId) => {
 // URL-based moment generation
 export const generateMomentsFromUrl = async (videoUrl, forceDownload, config) => {
   try {
-    const response = await api.post('/generate_moments', {
+    const response = await api.post('/pipeline/start', {
       video_url: videoUrl,
       force_download: forceDownload,
       ...config
