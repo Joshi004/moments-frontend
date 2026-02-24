@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
-  Button,
   Grid,
   CircularProgress,
 } from '@mui/material';
@@ -14,8 +13,6 @@ import { checkVideoAvailability } from '../../services/api';
 const ClipsTab = ({
   moments = [],
   videoId,
-  onExtractClips,
-  isExtractingClips = false,
 }) => {
   const [clipAvailability, setClipAvailability] = useState({});
   const [loadingClips, setLoadingClips] = useState(true);
@@ -92,8 +89,8 @@ const ClipsTab = ({
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Header with Extract button */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      {/* Header */}
+      <Box sx={{ mb: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Extracted Clips
           {availableClipCount > 0 && (
@@ -102,16 +99,6 @@ const ClipsTab = ({
             </Typography>
           )}
         </Typography>
-        
-        <Button
-          variant="contained"
-          startIcon={<ContentCut />}
-          onClick={onExtractClips}
-          disabled={coarseMoments.length === 0 || isExtractingClips}
-          size="small"
-        >
-          {isExtractingClips ? 'Extracting...' : 'Extract All Clips'}
-        </Button>
       </Box>
 
       {/* No clips available yet */}
@@ -122,7 +109,7 @@ const ClipsTab = ({
             {coarseMoments.length} moment{coarseMoments.length !== 1 ? 's' : ''} available
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Click "Extract All Clips" to generate video clips for each moment
+            Run the pipeline to extract video clips for each moment
           </Typography>
         </Box>
       )}

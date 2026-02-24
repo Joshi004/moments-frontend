@@ -6,10 +6,9 @@ import {
   Tabs,
   Tab,
   Paper,
-  Stack,
   Skeleton,
 } from '@mui/material';
-import { AutoAwesome, Add, ContentCut } from '@mui/icons-material';
+import { Add } from '@mui/icons-material';
 import MomentCard from './MomentCard';
 import EmptyState from '../common/EmptyState';
 
@@ -17,11 +16,8 @@ const MomentsSidebar = ({
   moments = [],
   currentTime,
   onMomentClick,
-  onGenerateClick,
   onAddMomentClick,
-  onRefineClick,
   onDeleteMoment,
-  onExtractClipsClick,
   onConfigClick,
   hasTranscript,
   loading = false,
@@ -102,29 +98,16 @@ const MomentsSidebar = ({
           Moments ({moments.length})
         </Typography>
         
-        <Stack direction="row" spacing={1}>
-          <Button
-            variant="contained"
-            startIcon={<AutoAwesome />}
-            onClick={onGenerateClick}
-            disabled={!hasTranscript}
-            size="small"
-            fullWidth
-            sx={{ fontSize: '0.75rem' }}
-          >
-            Generate
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Add />}
-            onClick={onAddMomentClick}
-            size="small"
-            fullWidth
-            sx={{ fontSize: '0.75rem' }}
-          >
-            Add Moment
-          </Button>
-        </Stack>
+        <Button
+          variant="outlined"
+          startIcon={<Add />}
+          onClick={onAddMomentClick}
+          size="small"
+          fullWidth
+          sx={{ fontSize: '0.75rem' }}
+        >
+          Add Moment
+        </Button>
       </Box>
 
       {/* Tabs for Coarse/Refined */}
@@ -173,13 +156,11 @@ const MomentsSidebar = ({
       >
         {displayedMoments.length === 0 ? (
           <EmptyState
-            icon={<AutoAwesome />}
+            icon={<Add />}
             title="No moments"
             message={hasTranscript 
-              ? "Generate AI-powered moments to highlight key segments of your video."
-              : "Generate a transcript first to enable AI-powered moments."}
-            actionLabel={hasTranscript ? "Generate Moments" : undefined}
-            onAction={hasTranscript ? onGenerateClick : undefined}
+              ? "Run the pipeline to generate AI-powered moments, or add moments manually."
+              : "Generate a transcript first via the pipeline to enable AI-powered moments."}
           />
         ) : (
           displayedMoments.map((moment) => {
@@ -191,38 +172,14 @@ const MomentsSidebar = ({
                 moment={moment}
                 isActive={isActive}
                 onClick={onMomentClick}
-                onRefineClick={onRefineClick}
                 onDeleteClick={onDeleteMoment}
                 onConfigClick={onConfigClick}
-                hasTranscript={hasTranscript}
               />
             );
           })
         )}
       </Box>
 
-      {/* Extract clips button at bottom */}
-      {moments.length > 0 && (
-        <Box
-          sx={{
-            p: 2,
-            borderTop: '1px solid',
-            borderColor: 'divider',
-            backgroundColor: 'background.paper',
-          }}
-        >
-          <Button
-            variant="outlined"
-            startIcon={<ContentCut />}
-            onClick={onExtractClipsClick}
-            fullWidth
-            size="small"
-            sx={{ fontSize: '0.75rem' }}
-          >
-            Extract All Clips
-          </Button>
-        </Box>
-      )}
     </Paper>
   );
 };

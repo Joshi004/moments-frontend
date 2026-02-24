@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardMedia, CardContent, Typography, Box, Skeleton, IconButton, Menu, MenuItem, Divider, Chip, Stack, Checkbox } from '@mui/material';
+import { Card, CardContent, Typography, Box, Skeleton, IconButton, Menu, MenuItem, Divider, Chip, Stack, Checkbox } from '@mui/material';
 import { PlayCircleOutline, MoreVert as MoreVertIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { getThumbnailUrl, getBackendBaseUrl } from '../services/api';
@@ -9,8 +9,6 @@ import { formatDuration } from '../utils/formatters';
 const VideoCard = ({ 
   video, 
   onClick, 
-  onAudioIconClick, 
-  onTranscriptIconClick, 
   onProcessPipelineClick, 
   onPipelineStatusClick, 
   onDeleteClick, 
@@ -55,12 +53,6 @@ const VideoCard = ({
       case 'pipeline':
         if (onProcessPipelineClick) onProcessPipelineClick(video);
         break;
-      case 'audio':
-        if (onAudioIconClick) onAudioIconClick(video);
-        break;
-      case 'transcript':
-        if (onTranscriptIconClick) onTranscriptIconClick(video);
-        break;
       case 'history':
         navigate(`/pipelines?videoId=${video.id}`);
         break;
@@ -78,12 +70,6 @@ const VideoCard = ({
       onPipelineStatusClick(video);
     }
   };
-
-  const isPipelineRunning = pipelineStatus && (
-    pipelineStatus.status === 'processing' || 
-    pipelineStatus.status === 'queued' || 
-    pipelineStatus.status === 'pending'
-  );
 
   const handleCheckboxClick = (e) => {
     e.stopPropagation();
@@ -383,8 +369,6 @@ const VideoCard = ({
         onClick={(e) => e.stopPropagation()}
       >
         <MenuItem onClick={handleMenuAction('pipeline')}>Run Pipeline</MenuItem>
-        <MenuItem onClick={handleMenuAction('audio')}>Process Audio</MenuItem>
-        <MenuItem onClick={handleMenuAction('transcript')}>Process Transcript</MenuItem>
         <MenuItem onClick={handleMenuAction('history')}>View Pipeline History</MenuItem>
         <Divider />
         <MenuItem onClick={handleMenuAction('delete')} sx={{ color: 'error.main' }}>

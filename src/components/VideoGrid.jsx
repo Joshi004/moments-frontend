@@ -3,7 +3,6 @@ import { Stack, Box } from '@mui/material';
 import { 
   VideoLibrary as VideoLibraryIcon,
   SearchOff,
-  LinkOutlined,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import VideoCard from './VideoCard';
@@ -13,8 +12,6 @@ import EmptyState from './common/EmptyState';
 const VideoGrid = ({ 
   videos, 
   viewMode = 'grid',
-  onAudioIconClick, 
-  onTranscriptIconClick, 
   onProcessPipelineClick, 
   onPipelineStatusClick, 
   onDeleteClick, 
@@ -61,8 +58,6 @@ const VideoGrid = ({
           <VideoListItem
             key={video.id}
             video={video}
-            onAudioIconClick={onAudioIconClick}
-            onTranscriptIconClick={onTranscriptIconClick}
             onProcessPipelineClick={onProcessPipelineClick}
             onPipelineStatusClick={onPipelineStatusClick}
             onDeleteClick={onDeleteClick}
@@ -94,8 +89,6 @@ const VideoGrid = ({
         <VideoCard 
           key={video.id}
           video={video}
-          onAudioIconClick={onAudioIconClick}
-          onTranscriptIconClick={onTranscriptIconClick}
           onProcessPipelineClick={onProcessPipelineClick}
           onPipelineStatusClick={onPipelineStatusClick}
           onDeleteClick={onDeleteClick}

@@ -11,8 +11,6 @@ import { formatDuration } from '../../utils/formatters';
  */
 function VideoListItem({ 
   video,
-  onAudioIconClick, 
-  onTranscriptIconClick, 
   onProcessPipelineClick, 
   onPipelineStatusClick, 
   onDeleteClick, 
@@ -53,12 +51,6 @@ function VideoListItem({
     switch (action) {
       case 'pipeline':
         if (onProcessPipelineClick) onProcessPipelineClick(video);
-        break;
-      case 'audio':
-        if (onAudioIconClick) onAudioIconClick(video);
-        break;
-      case 'transcript':
-        if (onTranscriptIconClick) onTranscriptIconClick(video);
         break;
       case 'history':
         navigate(`/pipelines?videoId=${video.id}`);
@@ -237,8 +229,6 @@ function VideoListItem({
         onClick={(e) => e.stopPropagation()}
       >
         <MenuItem onClick={handleMenuAction('pipeline')}>Run Pipeline</MenuItem>
-        <MenuItem onClick={handleMenuAction('audio')}>Process Audio</MenuItem>
-        <MenuItem onClick={handleMenuAction('transcript')}>Process Transcript</MenuItem>
         <MenuItem onClick={handleMenuAction('history')}>View Pipeline History</MenuItem>
         <Divider />
         <MenuItem onClick={handleMenuAction('delete')} sx={{ color: 'error.main' }}>

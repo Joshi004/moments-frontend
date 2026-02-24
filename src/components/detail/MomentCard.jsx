@@ -16,7 +16,7 @@ import {
   Button,
   useTheme,
 } from '@mui/material';
-import { PlayArrow, MoreVert, Tune, Info, Delete } from '@mui/icons-material';
+import { PlayArrow, MoreVert, Info, Delete } from '@mui/icons-material';
 
 const formatTime = (seconds) => {
   if (isNaN(seconds)) return '0:00';
@@ -53,10 +53,8 @@ const MomentCard = ({
   moment,
   isActive,
   onClick,
-  onRefineClick,
   onDeleteClick,
   onConfigClick,
-  hasTranscript,
 }) => {
   const theme = useTheme();
   const cardRef = useRef(null);
@@ -87,12 +85,6 @@ const MomentCard = ({
     setMenuAnchorEl(null);
   };
 
-  const handleRefineClick = (e) => {
-    e.stopPropagation();
-    handleMenuClose();
-    onRefineClick(moment);
-  };
-
   const handleConfigClick = (e) => {
     e.stopPropagation();
     handleMenuClose();
@@ -114,7 +106,6 @@ const MomentCard = ({
     setDeleteDialogOpen(false);
   };
 
-  const showRefineOption = hasTranscript && !moment.is_refined;
   const showConfigOption = !!moment.generation_config;
 
   return (
@@ -231,12 +222,6 @@ const MomentCard = ({
         onClose={handleMenuClose}
         onClick={(e) => e.stopPropagation()}
       >
-        {showRefineOption && (
-          <MenuItem onClick={handleRefineClick}>
-            <Tune fontSize="small" sx={{ mr: 1 }} />
-            Refine Timestamps
-          </MenuItem>
-        )}
         {showConfigOption && (
           <MenuItem onClick={handleConfigClick}>
             <Info fontSize="small" sx={{ mr: 1 }} />

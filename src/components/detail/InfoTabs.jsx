@@ -24,20 +24,9 @@ const InfoTabs = ({
   transcript,
   currentTime,
   pipelineHistory,
-  // Overview tab handlers
-  onProcessAudio,
-  onProcessTranscript,
-  onGenerateMoments,
-  onExtractClips,
   onRunPipeline,
-  // Processing states
-  isProcessingAudio,
-  isProcessingTranscript,
-  isGeneratingMoments,
-  isExtractingClips,
   // Transcript tab handlers
   onSeekTo,
-  onGenerateTranscript,
   // Pipeline tab handlers
   onStartPipeline,
   onCancelPipeline,
@@ -92,15 +81,7 @@ const InfoTabs = ({
           video={video}
           moments={moments}
           transcript={transcript}
-          onProcessAudio={onProcessAudio}
-          onProcessTranscript={onProcessTranscript}
-          onGenerateMoments={onGenerateMoments}
-          onExtractClips={onExtractClips}
           onRunPipeline={onRunPipeline}
-          isProcessingAudio={isProcessingAudio}
-          isProcessingTranscript={isProcessingTranscript}
-          isGeneratingMoments={isGeneratingMoments}
-          isExtractingClips={isExtractingClips}
         />
       </TabPanel>
 
@@ -109,9 +90,7 @@ const InfoTabs = ({
           transcript={transcript}
           currentTime={currentTime}
           onSeekTo={onSeekTo}
-          onGenerateTranscript={onGenerateTranscript}
           hasAudio={video?.has_audio || false}
-          isProcessingTranscript={isProcessingTranscript}
         />
       </TabPanel>
 
@@ -131,8 +110,6 @@ const InfoTabs = ({
         <ClipsTab
           moments={moments}
           videoId={video?.id}
-          onExtractClips={onExtractClips}
-          isExtractingClips={isExtractingClips}
         />
       </TabPanel>
     </Paper>

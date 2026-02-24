@@ -14,9 +14,7 @@ const TranscriptTab = ({
   transcript,
   currentTime,
   onSeekTo,
-  onGenerateTranscript,
   hasAudio = false,
-  isProcessingTranscript = false,
 }) => {
   const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,8 +67,6 @@ const TranscriptTab = ({
         message={hasAudio 
           ? "Generate a transcript to enable AI-powered features and clickable captions."
           : "Extract audio from the video first to generate a transcript."}
-        actionLabel={hasAudio ? (isProcessingTranscript ? "Generating..." : "Generate Transcript") : null}
-        onAction={hasAudio ? onGenerateTranscript : null}
       />
     );
   }

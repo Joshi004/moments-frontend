@@ -25,15 +25,7 @@ const OverviewTab = ({
   video,
   moments = [],
   transcript,
-  onProcessAudio,
-  onProcessTranscript,
-  onGenerateMoments,
-  onExtractClips,
   onRunPipeline,
-  isProcessingAudio = false,
-  isProcessingTranscript = false,
-  isGeneratingMoments = false,
-  isExtractingClips = false,
 }) => {
   const [copiedId, setCopiedId] = useState(false);
 
@@ -114,11 +106,8 @@ const OverviewTab = ({
           <ProcessingStatusCard
             title="Audio"
             icon={<AudioFile />}
-            status={video?.has_audio ? 'complete' : isProcessingAudio ? 'processing' : 'pending'}
+            status={video?.has_audio ? 'complete' : 'pending'}
             statusLabel={video?.has_audio ? 'Extracted' : 'Not Extracted'}
-            actionLabel="Extract Audio"
-            onAction={onProcessAudio}
-            disabled={video?.has_audio || isProcessingAudio}
           />
         </Grid>
         
@@ -126,11 +115,8 @@ const OverviewTab = ({
           <ProcessingStatusCard
             title="Transcript"
             icon={<Transcribe />}
-            status={video?.has_transcript ? 'complete' : isProcessingTranscript ? 'processing' : 'pending'}
+            status={video?.has_transcript ? 'complete' : 'pending'}
             statusLabel={video?.has_transcript ? 'Generated' : 'Not Generated'}
-            actionLabel="Generate Transcript"
-            onAction={onProcessTranscript}
-            disabled={!video?.has_audio || video?.has_transcript || isProcessingTranscript}
           />
         </Grid>
         
@@ -138,12 +124,9 @@ const OverviewTab = ({
           <ProcessingStatusCard
             title="Moments"
             icon={<AutoAwesome />}
-            status={moments.length > 0 ? 'complete' : isGeneratingMoments ? 'processing' : 'pending'}
+            status={moments.length > 0 ? 'complete' : 'pending'}
             statusLabel={moments.length > 0 ? 'Generated' : 'None'}
             count={moments.length}
-            actionLabel="Generate Moments"
-            onAction={onGenerateMoments}
-            disabled={!video?.has_transcript || isGeneratingMoments}
           />
         </Grid>
         
@@ -151,12 +134,9 @@ const OverviewTab = ({
           <ProcessingStatusCard
             title="Clips"
             icon={<ContentCut />}
-            status={clipCount > 0 ? 'complete' : isExtractingClips ? 'processing' : 'pending'}
+            status={clipCount > 0 ? 'complete' : 'pending'}
             statusLabel={clipCount > 0 ? 'Extracted' : 'None'}
             count={clipCount}
-            actionLabel="Extract Clips"
-            onAction={onExtractClips}
-            disabled={moments.length === 0 || isExtractingClips}
           />
         </Grid>
       </Grid>
@@ -166,61 +146,16 @@ const OverviewTab = ({
         Quick Actions
       </Typography>
       <Paper elevation={1} sx={{ p: 2 }}>
-        <Stack spacing={2}>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<PlayCircleOutline />}
-            onClick={onRunPipeline}
-            fullWidth
-            sx={{ py: 1.5 }}
-          >
-            Run Full Pipeline
-          </Button>
-          
-          <Divider />
-          
-          <Grid container spacing={1}>
-            <Grid item xs={12} sm={4}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<AudioFile />}
-                onClick={onProcessAudio}
-                disabled={video?.has_audio || isProcessingAudio}
-                fullWidth
-              >
-                Extract Audio
-              </Button>
-            </Grid>
-            
-            <Grid item xs={12} sm={4}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Transcribe />}
-                onClick={onProcessTranscript}
-                disabled={!video?.has_audio || video?.has_transcript || isProcessingTranscript}
-                fullWidth
-              >
-                Generate Transcript
-              </Button>
-            </Grid>
-            
-            <Grid item xs={12} sm={4}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<AutoAwesome />}
-                onClick={onGenerateMoments}
-                disabled={!video?.has_transcript || isGeneratingMoments}
-                fullWidth
-              >
-                Generate Moments
-              </Button>
-            </Grid>
-          </Grid>
-        </Stack>
+        <Button
+          variant="contained"
+          size="large"
+          startIcon={<PlayCircleOutline />}
+          onClick={onRunPipeline}
+          fullWidth
+          sx={{ py: 1.5 }}
+        >
+          Run Full Pipeline
+        </Button>
       </Paper>
     </Box>
   );
