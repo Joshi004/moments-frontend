@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Snackbar, Alert, Skeleton, Button } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { ArrowBack, VideocamOff } from '@mui/icons-material';
 import DetailPageHeader from '../components/detail/DetailPageHeader';
 import VideoPlayer from '../components/VideoPlayer';
 import MomentsSidebar from '../components/detail/MomentsSidebar';
@@ -71,18 +71,10 @@ const VideoDetailPage = () => {
         getPipelineHistory(id).catch(() => []),
       ]);
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/c977c504-61ab-425e-ac89-91f4eccdb599',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VideoDetailPage.jsx:117',message:'After Promise.all - historyData',data:{videoId:id,historyDataType:typeof historyData,isArray:Array.isArray(historyData),historyData:historyData},timestamp:Date.now(),hypothesisId:'H1,H2,H3,H5'})}).catch(()=>{});
-      // #endregion
-
       setVideo(videoData);
       setMoments(momentsData);
       setTranscript(transcriptData);
       setPipelineHistory(historyData);
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/c977c504-61ab-425e-ac89-91f4eccdb599',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VideoDetailPage.jsx:128',message:'After setPipelineHistory in fetchVideoData',data:{videoId:id,historyDataType:typeof historyData,isArray:Array.isArray(historyData)},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
-      // #endregion
     } catch (err) {
       console.error('Error fetching video data:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to load video');
@@ -94,15 +86,9 @@ const VideoDetailPage = () => {
   const fetchPipelineHistoryData = async () => {
     try {
       const historyData = await getPipelineHistory(id);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/c977c504-61ab-425e-ac89-91f4eccdb599',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VideoDetailPage.jsx:141',message:'fetchPipelineHistoryData - before setState',data:{videoId:id,historyDataType:typeof historyData,isArray:Array.isArray(historyData),historyData:historyData},timestamp:Date.now(),hypothesisId:'H1,H2,H3,H5'})}).catch(()=>{});
-      // #endregion
       setPipelineHistory(historyData);
     } catch (err) {
       console.error('Error fetching pipeline history:', err);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/c977c504-61ab-425e-ac89-91f4eccdb599',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'VideoDetailPage.jsx:149',message:'fetchPipelineHistoryData - error caught',data:{videoId:id,error:err.message},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
-      // #endregion
     }
   };
 
@@ -343,17 +329,43 @@ const VideoDetailPage = () => {
                 width: { xs: '100%' },
               }}
             >
-              <VideoPlayer
-                ref={playerRef}
-                video={video}
-                moments={moments}
-                transcript={transcript}
-                onTimeUpdate={handleTimeUpdate}
-                onPrevious={handlePrevious}
-                onNext={handleNext}
-                hasPrevious={hasPrevious}
-                hasNext={hasNext}
-              />
+              {video?.cloud_url ? (
+                <VideoPlayer
+                  ref={playerRef}
+                  video={video}
+                  moments={moments}
+                  transcript={transcript}
+                  onTimeUpdate={handleTimeUpdate}
+                  onPrevious={handlePrevious}
+                  onNext={handleNext}
+                  hasPrevious={hasPrevious}
+                  hasNext={hasNext}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: '100%',
+                    aspectRatio: '16/9',
+                    borderRadius: 2,
+                    backgroundColor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1.5,
+                  }}
+                >
+                  <VideocamOff sx={{ fontSize: 64, color: 'text.disabled' }} />
+                  <Typography variant="h6" color="text.secondary">
+                    Source video has been removed
+                  </Typography>
+                  <Typography variant="body2" color="text.disabled">
+                    Clips, transcript, and moments are still available.
+                  </Typography>
+                </Box>
+              )}
 
               {/* Info Tabs directly below the player */}
               <Box sx={{ mt: 2 }}>

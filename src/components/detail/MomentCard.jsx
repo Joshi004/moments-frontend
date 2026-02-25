@@ -16,7 +16,7 @@ import {
   Button,
   useTheme,
 } from '@mui/material';
-import { PlayArrow, MoreVert, Info, Delete } from '@mui/icons-material';
+import { PlayArrow, MoreVert, Info, Delete, BrokenImage } from '@mui/icons-material';
 
 const formatTime = (seconds) => {
   if (isNaN(seconds)) return '0:00';
@@ -209,6 +209,31 @@ const MomentCard = ({
                     opacity: 0.8,
                   }}
                 />
+              </Box>
+            )}
+
+            {/* Clip not available indicator */}
+            {(!moment.clip || !moment.clip?.cloud_url) && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                  mt: 1,
+                  p: 1.5,
+                  borderRadius: 1,
+                  backgroundColor: 'action.hover',
+                }}
+              >
+                <BrokenImage sx={{ fontSize: 24, color: 'text.disabled' }} />
+                <Typography variant="caption" color="text.secondary">
+                  Clip not available
+                </Typography>
+                <Typography variant="caption" color="text.disabled">
+                  Re-run the pipeline to regenerate this clip.
+                </Typography>
               </Box>
             )}
           </CardContent>
