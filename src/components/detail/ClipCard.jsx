@@ -28,6 +28,10 @@ const formatDuration = (startTime, endTime) => {
 const ClipCard = ({ moment, videoId, clipAvailable = false, clipUrl = null }) => {
   const [playing, setPlaying] = useState(false);
 
+  // Compute stream URL unconditionally (hooks must run before any early return)
+  // Fix: backend clips router is mounted under /api, so URL must include /api prefix
+  const streamUrl = `${getBackendBaseUrl()}/api/clips/${moment.id}/stream`;
+
   if (!clipAvailable) {
     return (
       <Card
@@ -64,9 +68,6 @@ const ClipCard = ({ moment, videoId, clipAvailable = false, clipUrl = null }) =>
       </Card>
     );
   }
-
-  // Stream endpoint: backend redirects to fresh GCS signed URL
-  const streamUrl = `${getBackendBaseUrl()}/clips/${moment.id}/stream`;
 
   const handlePlay = () => {
     setPlaying(true);
@@ -109,15 +110,39 @@ const ClipCard = ({ moment, videoId, clipAvailable = false, clipUrl = null }) =>
             sx={{
               width: '100%',
               height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'grey.800',
+              position: 'relative',
               cursor: 'pointer',
+              backgroundColor: 'black',
             }}
             onClick={handlePlay}
           >
-            <PlayArrow sx={{ fontSize: 64, color: 'white' }} />
+            {/* Show first frame of clip as thumbnail via preload="metadata" */}
+            {clipUrl && (
+              <video
+                src={clipUrl}
+                preload="metadata"
+                muted
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+            )}
+            {/* Play overlay */}
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(0,0,0,0.35)',
+              }}
+            >
+              <PlayArrow sx={{ fontSize: 64, color: 'white', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }} />
+            </Box>
           </Box>
         ) : (
           <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
