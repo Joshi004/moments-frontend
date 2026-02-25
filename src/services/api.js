@@ -156,6 +156,11 @@ export const getClipsForVideo = async (videoId) => {
   }
 };
 
+export const getClipTranscript = async (momentIdentifier) => {
+  const response = await api.get(`/clips/${momentIdentifier}/transcript`);
+  return response.data;
+};
+
 // Pipeline API
 export const startPipeline = async (videoId, config) => {
   try {

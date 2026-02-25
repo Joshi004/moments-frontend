@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -7,9 +7,11 @@ import {
   Button,
   Box,
   IconButton,
+  Collapse,
+  CircularProgress,
 } from '@mui/material';
-import { PlayArrow, Download, Close, ContentCut } from '@mui/icons-material';
-import { getBackendBaseUrl } from '../../services/api';
+import { PlayArrow, Download, Close, ContentCut, Subject } from '@mui/icons-material';
+import { getBackendBaseUrl, getClipTranscript } from '../../services/api';
 
 const formatTime = (seconds) => {
   if (isNaN(seconds)) return '0:00';
@@ -27,10 +29,64 @@ const formatDuration = (startTime, endTime) => {
 
 const ClipCard = ({ moment, videoId, clipAvailable = false, clipUrl = null, clipMetadata = null }) => {
   const [playing, setPlaying] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [transcriptData, setTranscriptData] = useState(null);
+  const [transcriptLoading, setTranscriptLoading] = useState(false);
+  const [transcriptError, setTranscriptError] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  const videoRef = useRef(null);
+  const activeWordRef = useRef(null);
+  const transcriptContainerRef = useRef(null);
 
   // Compute stream URL unconditionally (hooks must run before any early return)
   // Fix: backend clips router is mounted under /api, so URL must include /api prefix
   const streamUrl = `${getBackendBaseUrl()}/api/clips/${moment.id}/stream`;
+
+  // Attach timeupdate listener only when the video is playing AND transcript panel is open
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !playing || !showTranscript) return;
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(video.currentTime);
+    };
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [playing, showTranscript]);
+
+  // Auto-scroll the active word into view whenever currentTime changes
+  useEffect(() => {
+    if (activeWordRef.current && transcriptContainerRef.current) {
+      activeWordRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  }, [currentTime]);
+
+  const handleToggleTranscript = async () => {
+    if (showTranscript) {
+      setShowTranscript(false);
+      return;
+    }
+
+    setShowTranscript(true);
+
+    if (transcriptData) return;
+
+    setTranscriptLoading(true);
+    setTranscriptError(null);
+    try {
+      const data = await getClipTranscript(moment.id);
+      setTranscriptData(data);
+    } catch (err) {
+      setTranscriptError('Failed to load transcript');
+    } finally {
+      setTranscriptLoading(false);
+    }
+  };
 
   if (!clipAvailable) {
     return (
@@ -147,6 +203,7 @@ const ClipCard = ({ moment, videoId, clipAvailable = false, clipUrl = null, clip
         ) : (
           <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
             <video
+              ref={videoRef}
               src={streamUrl}
               controls
               autoPlay
@@ -234,7 +291,58 @@ const ClipCard = ({ moment, videoId, clipAvailable = false, clipUrl = null, clip
         >
           Download
         </Button>
+        <Button
+          size="small"
+          startIcon={<Subject />}
+          onClick={handleToggleTranscript}
+          sx={{ fontSize: '0.75rem' }}
+          color={showTranscript ? 'primary' : 'inherit'}
+        >
+          Transcript
+        </Button>
       </CardActions>
+
+      {/* Transcript Panel */}
+      <Collapse in={showTranscript}>
+        <Box
+          ref={transcriptContainerRef}
+          sx={{ px: 1.5, pb: 1.5, maxHeight: 200, overflowY: 'auto' }}
+        >
+          {transcriptLoading && <CircularProgress size={20} />}
+          {transcriptError && (
+            <Typography variant="caption" color="error">
+              {transcriptError}
+            </Typography>
+          )}
+          {transcriptData && transcriptData.words && transcriptData.words.length > 0 && (
+            <Typography variant="body2" sx={{ lineHeight: 1.8 }}>
+              {transcriptData.words.map((word, idx) => {
+                const isActive = playing && currentTime >= word.start && currentTime < word.end;
+                return (
+                  <span
+                    key={idx}
+                    ref={isActive ? activeWordRef : null}
+                    style={{
+                      backgroundColor: isActive ? 'rgba(25, 118, 210, 0.2)' : 'transparent',
+                      fontWeight: isActive ? 600 : 400,
+                      padding: '1px 2px',
+                      borderRadius: 2,
+                      transition: 'background-color 0.15s',
+                    }}
+                  >
+                    {word.word}{' '}
+                  </span>
+                );
+              })}
+            </Typography>
+          )}
+          {transcriptData && (!transcriptData.words || transcriptData.words.length === 0) && (
+            <Typography variant="caption" color="text.secondary">
+              No transcript available
+            </Typography>
+          )}
+        </Box>
+      </Collapse>
     </Card>
   );
 };
