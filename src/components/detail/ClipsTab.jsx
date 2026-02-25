@@ -35,11 +35,13 @@ const ClipsTab = ({
       
       const availabilityChecks = coarseMoments.map(moment =>
         checkVideoAvailability(videoId, moment.id)
-          .then(response => ({
-            momentId: moment.id,
-            available: response.available || false,
-            clip_url: response.clip_url || null,
-          }))
+          .then(response => {
+            return {
+              momentId: moment.id,
+              available: response.available || false,
+              clip_url: response.clip_url || null,
+            };
+          })
           .catch(() => ({
             momentId: moment.id,
             available: false,
