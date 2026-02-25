@@ -25,7 +25,7 @@ const formatDuration = (startTime, endTime) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const ClipCard = ({ moment, videoId, clipAvailable = false, clipUrl = null }) => {
+const ClipCard = ({ moment, videoId, clipAvailable = false, clipUrl = null, clipMetadata = null }) => {
   const [playing, setPlaying] = useState(false);
 
   // Compute stream URL unconditionally (hooks must run before any early return)
@@ -182,11 +182,38 @@ const ClipCard = ({ moment, videoId, clipAvailable = false, clipUrl = null }) =>
         <Typography variant="subtitle2" noWrap sx={{ mb: 0.5 }}>
           {moment.title}
         </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {formatTime(moment.start_time)} - {formatTime(moment.end_time)}
-          {' • '}
-          Duration: {formatDuration(moment.start_time, moment.end_time)}
-        </Typography>
+        {clipMetadata ? (
+          <>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Clip: {formatTime(clipMetadata.start_time)} - {formatTime(clipMetadata.end_time)}
+              {' • '}
+              {formatDuration(clipMetadata.start_time, clipMetadata.end_time)}
+            </Typography>
+            <Typography variant="caption" color="text.disabled" display="block" sx={{ fontSize: '0.68rem' }}>
+              Moment: {formatTime(moment.start_time)} - {formatTime(moment.end_time)}
+              {' • '}
+              {formatDuration(moment.start_time, moment.end_time)}
+            </Typography>
+            {(clipMetadata.resolution || clipMetadata.file_size_kb) && (
+              <Typography variant="caption" color="text.disabled" display="block" sx={{ fontSize: '0.68rem' }}>
+                {[
+                  clipMetadata.resolution,
+                  clipMetadata.file_size_kb
+                    ? `${(clipMetadata.file_size_kb / 1024).toFixed(1)} MB`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' • ')}
+              </Typography>
+            )}
+          </>
+        ) : (
+          <Typography variant="caption" color="text.secondary">
+            {formatTime(moment.start_time)} - {formatTime(moment.end_time)}
+            {' • '}
+            Duration: {formatDuration(moment.start_time, moment.end_time)}
+          </Typography>
+        )}
       </CardContent>
 
       {/* Actions */}

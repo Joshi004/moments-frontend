@@ -146,6 +146,16 @@ export const checkVideoAvailability = async (videoId, momentId) => {
   }
 };
 
+export const getClipsForVideo = async (videoId) => {
+  try {
+    const response = await api.get(`/videos/${videoId}/clips`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching clips for video:', error);
+    throw error;
+  }
+};
+
 // Pipeline API
 export const startPipeline = async (videoId, config) => {
   try {

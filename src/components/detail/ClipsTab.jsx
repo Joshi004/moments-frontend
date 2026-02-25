@@ -8,7 +8,7 @@ import {
 import { ContentCut } from '@mui/icons-material';
 import ClipCard from './ClipCard';
 import EmptyState from '../common/EmptyState';
-import { checkVideoAvailability } from '../../services/api';
+import { getClipsForVideo } from '../../services/api';
 
 const ClipsTab = ({
   moments = [],
@@ -23,51 +23,37 @@ const ClipsTab = ({
     [moments]
   );
 
-  // Check clip availability for each moment on mount
+  // Fetch all clips for the video in a single bulk API call
   useEffect(() => {
-    const checkClips = async () => {
+    const fetchClips = async () => {
       if (!videoId || coarseMoments.length === 0) {
         setLoadingClips(false);
         return;
       }
 
       setLoadingClips(true);
-      
-      const availabilityChecks = coarseMoments.map(moment =>
-        checkVideoAvailability(videoId, moment.id)
-          .then(response => {
-            return {
-              momentId: moment.id,
-              available: response.available || false,
-              clip_url: response.clip_url || null,
-            };
-          })
-          .catch(() => ({
-            momentId: moment.id,
-            available: false,
-            clip_url: null,
-          }))
-      );
-
-      const results = await Promise.allSettled(availabilityChecks);
-      
-      const availabilityMap = {};
-      results.forEach(result => {
-        if (result.status === 'fulfilled') {
-          const { momentId, available, clip_url } = result.value;
-          availabilityMap[momentId] = { available, clip_url };
-        }
-      });
-
-      setClipAvailability(availabilityMap);
-      setLoadingClips(false);
+      try {
+        const clips = await getClipsForVideo(videoId);
+        const clipMap = {};
+        clips.forEach(clip => {
+          if (clip.moment_identifier) {
+            clipMap[clip.moment_identifier] = clip;
+          }
+        });
+        setClipAvailability(clipMap);
+      } catch (error) {
+        console.error('Error fetching clips:', error);
+        setClipAvailability({});
+      } finally {
+        setLoadingClips(false);
+      }
     };
 
-    checkClips();
+    fetchClips();
   }, [videoId, coarseMoments]);
 
-  // Count available clips
-  const availableClipCount = Object.values(clipAvailability).filter(c => c.available).length;
+  // Count available clips (each key in the map represents an available clip)
+  const availableClipCount = Object.keys(clipAvailability).length;
 
   // Empty state when no moments
   if (moments.length === 0) {
@@ -120,17 +106,16 @@ const ClipsTab = ({
       {availableClipCount > 0 && (
         <Grid container spacing={2}>
           {coarseMoments.map((moment) => {
-            const clipData = clipAvailability[moment.id];
-            const available = clipData?.available || false;
-            const clipUrl = clipData?.clip_url || null;
+            const clip = clipAvailability[moment.id] || null;
 
             return (
               <Grid item xs={12} sm={6} md={4} key={moment.id}>
                 <ClipCard
                   moment={moment}
                   videoId={videoId}
-                  clipAvailable={available}
-                  clipUrl={clipUrl}
+                  clipAvailable={!!clip}
+                  clipUrl={clip?.url || null}
+                  clipMetadata={clip}
                 />
               </Grid>
             );
