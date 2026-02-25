@@ -19,9 +19,6 @@ const VideoGrid = ({
   hasActiveFilters = false,
   onClearFilters,
   allVideosCount = 0,
-  isSelectMode = false,
-  selectedIds = new Set(),
-  onSelectVideo,
 }) => {
   const navigate = useNavigate();
 
@@ -62,9 +59,6 @@ const VideoGrid = ({
             onPipelineStatusClick={onPipelineStatusClick}
             onDeleteClick={onDeleteClick}
             pipelineStatus={pipelineStatuses?.[video.id]}
-            showCheckbox={isSelectMode}
-            isSelected={selectedIds.has(video.id)}
-            onSelect={onSelectVideo}
           />
         ))}
       </Stack>
@@ -93,9 +87,6 @@ const VideoGrid = ({
           onPipelineStatusClick={onPipelineStatusClick}
           onDeleteClick={onDeleteClick}
           pipelineStatus={pipelineStatuses?.[video.id]}
-          showCheckbox={isSelectMode}
-          isSelected={selectedIds.has(video.id)}
-          onSelect={onSelectVideo}
         />
       ))}
     </Box>

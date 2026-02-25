@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, Typography, Box, Skeleton, IconButton, Menu, MenuItem, Divider, Chip, Stack, Checkbox } from '@mui/material';
+import { Card, CardContent, Typography, Box, Skeleton, IconButton, Menu, MenuItem, Divider, Chip, Stack } from '@mui/material';
 import { PlayCircleOutline, MoreVert as MoreVertIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { getThumbnailUrl, getBackendBaseUrl } from '../services/api';
@@ -13,9 +13,6 @@ const VideoCard = ({
   onPipelineStatusClick, 
   onDeleteClick, 
   pipelineStatus,
-  showCheckbox = false,
-  isSelected = false,
-  onSelect,
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -71,23 +68,8 @@ const VideoCard = ({
     }
   };
 
-  const handleCheckboxClick = (e) => {
-    e.stopPropagation();
-    if (onSelect) {
-      onSelect(video.id);
-    }
-  };
-
   const handleCardClick = () => {
-    if (showCheckbox) {
-      // In select mode, clicking the card also toggles selection
-      if (onSelect) {
-        onSelect(video.id);
-      }
-    } else {
-      // Normal mode: navigate
-      navigate(`/videos/${video.id}`);
-    }
+    navigate(`/videos/${video.id}`);
   };
 
   return (
@@ -95,8 +77,8 @@ const VideoCard = ({
       sx={{
         cursor: 'pointer',
         transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-        border: isSelected ? '2px solid' : '1px solid',
-        borderColor: isSelected ? 'primary.main' : 'rgba(0, 0, 0, 0.12)',
+        border: '1px solid',
+        borderColor: 'rgba(0, 0, 0, 0.12)',
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: 6,
@@ -105,9 +87,6 @@ const VideoCard = ({
             '& .MuiSvgIcon-root': {
               opacity: 0.9,
             },
-          },
-          '& .selection-checkbox': {
-            opacity: 1,
           },
         },
         display: 'flex',
@@ -204,38 +183,6 @@ const VideoCard = ({
             }}
           />
         </Box>
-        {/* Selection Checkbox */}
-        {showCheckbox && (
-          <Box
-            className="selection-checkbox"
-            sx={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
-              zIndex: 10,
-              opacity: isSelected ? 1 : 0.7,
-              transition: 'opacity 0.2s',
-            }}
-            onClick={handleCheckboxClick}
-          >
-            <Checkbox
-              checked={isSelected}
-              sx={{
-                color: 'white',
-                bgcolor: 'rgba(0, 0, 0, 0.5)',
-                borderRadius: '4px',
-                '&.Mui-checked': {
-                  color: 'white',
-                  bgcolor: 'primary.main',
-                },
-                '&:hover': {
-                  bgcolor: 'rgba(0, 0, 0, 0.7)',
-                },
-              }}
-            />
-          </Box>
-        )}
-
         {/* Duration badge */}
         {video.duration && (
           <Box
