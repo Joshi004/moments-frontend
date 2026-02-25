@@ -38,12 +38,12 @@ const ClipsTab = ({
           .then(response => ({
             momentId: moment.id,
             available: response.available || false,
-            clip_path: response.clip_path || null,
+            clip_url: response.clip_url || null,
           }))
           .catch(() => ({
             momentId: moment.id,
             available: false,
-            clip_path: null,
+            clip_url: null,
           }))
       );
 
@@ -52,8 +52,8 @@ const ClipsTab = ({
       const availabilityMap = {};
       results.forEach(result => {
         if (result.status === 'fulfilled') {
-          const { momentId, available, clip_path } = result.value;
-          availabilityMap[momentId] = { available, clip_path };
+          const { momentId, available, clip_url } = result.value;
+          availabilityMap[momentId] = { available, clip_url };
         }
       });
 
@@ -120,7 +120,7 @@ const ClipsTab = ({
           {coarseMoments.map((moment) => {
             const clipData = clipAvailability[moment.id];
             const available = clipData?.available || false;
-            const clipPath = clipData?.clip_path || null;
+            const clipUrl = clipData?.clip_url || null;
 
             return (
               <Grid item xs={12} sm={6} md={4} key={moment.id}>
@@ -128,7 +128,7 @@ const ClipsTab = ({
                   moment={moment}
                   videoId={videoId}
                   clipAvailable={available}
-                  clipPath={clipPath}
+                  clipUrl={clipUrl}
                 />
               </Grid>
             );

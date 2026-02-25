@@ -39,9 +39,9 @@ const InfoTabs = ({
     setSelectedTab(newValue);
   };
 
-  // Count clips for tab label
+  // Count only moments that have an actual extracted clip
   const clipCount = useMemo(() => {
-    return moments.filter(m => !m.is_refined).length;
+    return moments.filter(m => !m.is_refined && m.clip != null).length;
   }, [moments]);
 
   return (

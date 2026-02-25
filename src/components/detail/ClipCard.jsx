@@ -25,7 +25,7 @@ const formatDuration = (startTime, endTime) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const ClipCard = ({ moment, videoId, clipAvailable = false, clipPath = null }) => {
+const ClipCard = ({ moment, videoId, clipAvailable = false, clipUrl = null }) => {
   const [playing, setPlaying] = useState(false);
 
   if (!clipAvailable) {
@@ -65,10 +65,8 @@ const ClipCard = ({ moment, videoId, clipAvailable = false, clipPath = null }) =
     );
   }
 
-  // Construct clip URL
-  const clipUrl = clipPath 
-    ? `${getBackendBaseUrl()}${clipPath}`
-    : `${getBackendBaseUrl()}/static/moment_clips/${videoId}_${moment.id}_clip.mp4`;
+  // Stream endpoint: backend redirects to fresh GCS signed URL
+  const streamUrl = `${getBackendBaseUrl()}/clips/${moment.id}/stream`;
 
   const handlePlay = () => {
     setPlaying(true);
@@ -80,7 +78,7 @@ const ClipCard = ({ moment, videoId, clipAvailable = false, clipPath = null }) =
 
   const handleDownload = () => {
     const link = document.createElement('a');
-    link.href = clipUrl;
+    link.href = streamUrl;
     link.download = `${moment.title.replace(/[^a-zA-Z0-9]/g, '_')}_clip.mp4`;
     document.body.appendChild(link);
     link.click();
@@ -124,7 +122,7 @@ const ClipCard = ({ moment, videoId, clipAvailable = false, clipPath = null }) =
         ) : (
           <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
             <video
-              src={clipUrl}
+              src={streamUrl}
               controls
               autoPlay
               style={{
