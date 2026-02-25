@@ -118,7 +118,7 @@ export const addMoment = async (videoId, moment) => {
 
 export const deleteMoment = async (videoId, momentId) => {
   try {
-    const response = await api.delete(`/videos/${videoId}/moments/${momentId}`);
+    const response = await api.delete(`/videos/${videoId}?scope=moments&moment_ids=${momentId}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting moment:', error);
@@ -207,53 +207,11 @@ export const generateMomentsFromUrl = async (videoUrl, forceDownload, config) =>
 export const deleteVideo = async (videoId, options = {}) => {
   try {
     const params = new URLSearchParams();
-    
-    // Add granular skip parameters if specified
-    // Local file options
-    if (options.skipLocalVideo) {
-      params.append('skip_local_video', 'true');
-    }
-    if (options.skipLocalAudio) {
-      params.append('skip_local_audio', 'true');
-    }
-    if (options.skipLocalThumbnail) {
-      params.append('skip_local_thumbnail', 'true');
-    }
-    if (options.skipLocalTranscript) {
-      params.append('skip_local_transcript', 'true');
-    }
-    if (options.skipLocalMoments) {
-      params.append('skip_local_moments', 'true');
-    }
-    if (options.skipLocalClips) {
-      params.append('skip_local_clips', 'true');
-    }
-    
-    // GCS options
-    if (options.skipGcsAudio) {
-      params.append('skip_gcs_audio', 'true');
-    }
-    if (options.skipGcsClips) {
-      params.append('skip_gcs_clips', 'true');
-    }
-    
-    // State options
-    if (options.skipRedis) {
-      params.append('skip_redis', 'true');
-    }
-    if (options.skipRegistry) {
-      params.append('skip_registry', 'true');
-    }
-    
-    // Force option
+    params.append('scope', options.scope || 'all');
     if (options.force) {
       params.append('force', 'true');
     }
-    
-    const queryString = params.toString();
-    const url = `/videos/${videoId}${queryString ? `?${queryString}` : ''}`;
-    
-    const response = await api.delete(url);
+    const response = await api.delete(`/videos/${videoId}?${params.toString()}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting video:', error);
