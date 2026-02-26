@@ -203,6 +203,16 @@ export const getPipelineHistory = async (videoId) => {
   }
 };
 
+export const getActivePipelines = async () => {
+  try {
+    const response = await api.get('/pipeline/active');
+    return response.data?.active_pipelines || [];
+  } catch (error) {
+    console.error('Error fetching active pipelines:', error);
+    return [];
+  }
+};
+
 // URL-based moment generation
 export const generateMomentsFromUrl = async (videoUrl, forceDownload, config) => {
   try {

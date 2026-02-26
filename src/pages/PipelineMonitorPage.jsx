@@ -4,7 +4,7 @@ import { Timeline, Refresh } from '@mui/icons-material';
 import PageHeader from '../components/common/PageHeader';
 import ActivePipelineCard from '../components/pipelines/ActivePipelineCard';
 import PipelineHistoryTable from '../components/pipelines/PipelineHistoryTable';
-import { getVideos, getPipelineStatus, getPipelineHistory, cancelPipeline } from '../services/api';
+import { getVideos, getActivePipelines, getPipelineHistory, cancelPipeline } from '../services/api';
 
 const PipelineMonitorPage = () => {
   const [videos, setVideos] = useState([]);
@@ -25,29 +25,8 @@ const PipelineMonitorPage = () => {
       const videosData = await getVideos();
       setVideos(videosData);
 
-      // Step 2: Check pipeline status for each video
-      const statusPromises = videosData.map((video) =>
-        getPipelineStatus(video.id)
-          .then((status) => ({ videoId: video.id, status, success: true }))
-          .catch(() => ({ videoId: video.id, success: false }))
-      );
-
-      const statusResults = await Promise.allSettled(statusPromises);
-
-      // Extract active pipelines
-      const active = [];
-      statusResults.forEach((result) => {
-        if (result.status === 'fulfilled' && result.value.success) {
-          const { videoId, status } = result.value;
-          if (['processing', 'queued', 'pending'].includes(status.status)) {
-            active.push({
-              ...status,
-              video_id: videoId,
-            });
-          }
-        }
-      });
-
+      // Step 2: Fetch all active pipelines in a single call
+      const active = await getActivePipelines();
       setActivePipelines(active);
       setLoading(false);
 
@@ -109,46 +88,21 @@ const PipelineMonitorPage = () => {
 
   // Poll active pipelines
   const pollActivePipelines = useCallback(async () => {
-    if (activePipelines.length === 0) return;
-
     try {
-      const statusPromises = activePipelines.map((pipeline) =>
-        getPipelineStatus(pipeline.video_id)
-          .then((status) => ({ videoId: pipeline.video_id, status, success: true }))
-          .catch(() => ({ videoId: pipeline.video_id, success: false }))
-      );
+      const previousIds = new Set(activePipelines.map((p) => p.video_id));
+      const updated = await getActivePipelines();
+      setActivePipelines(updated);
 
-      const results = await Promise.allSettled(statusPromises);
+      // Detect pipelines that were active before but are no longer active
+      const currentIds = new Set(updated.map((p) => p.video_id));
+      const completedVideoIds = [...previousIds].filter((id) => !currentIds.has(id));
 
-      const updatedActive = [];
-      const completedVideoIds = [];
-
-      results.forEach((result) => {
-        if (result.status === 'fulfilled' && result.value.success) {
-          const { videoId, status } = result.value;
-
-          if (['processing', 'queued', 'pending'].includes(status.status)) {
-            updatedActive.push({
-              ...status,
-              video_id: videoId,
-            });
-          } else {
-            // Pipeline completed/failed/cancelled
-            completedVideoIds.push(videoId);
-          }
-        }
-      });
-
-      setActivePipelines(updatedActive);
-
-      // Refetch history for completed pipelines
       if (completedVideoIds.length > 0) {
         completedVideoIds.forEach(async (videoId) => {
           try {
             const history = await getPipelineHistory(videoId);
             if (Array.isArray(history) && history.length > 0) {
               setPipelineHistory((prev) => {
-                // Remove old entries for this video and add new ones
                 const filtered = prev.filter((item) => item.video_id !== videoId);
                 const newEntries = history.map((run) => ({ ...run, video_id: videoId }));
                 const combined = [...newEntries, ...filtered];

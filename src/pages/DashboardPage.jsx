@@ -7,7 +7,7 @@ import StatCard from '../components/dashboard/StatCard';
 import QuickActions from '../components/dashboard/QuickActions';
 import ActivePipelinesWidget from '../components/dashboard/ActivePipelinesWidget';
 import RecentActivityFeed from '../components/dashboard/RecentActivityFeed';
-import { getVideos, getPipelineStatus, checkHealth } from '../services/api';
+import { getVideos, getActivePipelines, checkHealth } from '../services/api';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -39,22 +39,10 @@ const DashboardPage = () => {
       setVideos(videosData);
       setHealthStatus(healthData);
 
-      // Scan for active pipelines across all videos
-      if (videosData.length > 0) {
-        const statusChecks = videosData.map(v =>
-          getPipelineStatus(v.id)
-            .then(s => ({ videoId: v.id, ...s }))
-            .catch(() => null)
-        );
-
-        const results = await Promise.allSettled(statusChecks);
-        const active = results
-          .filter(r => r.status === 'fulfilled' && r.value)
-          .map(r => r.value)
-          .filter(s => s && ['processing', 'queued', 'pending'].includes(s.status));
-
-        setActivePipelines(active);
-      }
+      // Fetch all active pipelines in a single call; map video_id to videoId for widget compatibility
+      const activePipelinesData = await getActivePipelines();
+      const active = activePipelinesData.map((p) => ({ ...p, videoId: p.video_id }));
+      setActivePipelines(active);
 
       if (videosResult.status === 'rejected') {
         setError('Failed to load videos. Make sure the backend server is running.');

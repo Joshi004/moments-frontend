@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { Timeline } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { getPipelineStatus } from '../../services/api';
+import { getActivePipelines } from '../../services/api';
 
 const STAGE_LABELS = {
   download: 'Downloading',
@@ -34,25 +34,17 @@ const ActivePipelinesWidget = ({ videos = [], initialActivePipelines = [] }) => 
     if (activePipelines.length === 0) return;
 
     const pollInterval = setInterval(async () => {
-      const videoIds = activePipelines.map(p => p.videoId);
-      
-      const statusChecks = videoIds.map(videoId =>
-        getPipelineStatus(videoId)
-          .then(s => ({ videoId, ...s }))
-          .catch(() => null)
-      );
-
-      const results = await Promise.allSettled(statusChecks);
-      const updated = results
-        .filter(r => r.status === 'fulfilled' && r.value)
-        .map(r => r.value)
-        .filter(s => ['processing', 'queued', 'pending'].includes(s.status));
-
-      setActivePipelines(updated);
+      try {
+        const result = await getActivePipelines();
+        const updated = result.map((p) => ({ ...p, videoId: p.video_id }));
+        setActivePipelines(updated);
+      } catch (err) {
+        console.error('Error polling active pipelines:', err);
+      }
     }, 5000); // Poll every 5 seconds
 
     return () => clearInterval(pollInterval);
-  }, [activePipelines]);
+  }, [activePipelines.length]);
 
   // Elapsed time counter
   useEffect(() => {
