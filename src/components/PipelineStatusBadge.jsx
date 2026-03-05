@@ -10,6 +10,7 @@ import {
   ContentCut,
   TuneOutlined,
 } from '@mui/icons-material';
+import { getSubStageBriefLabel } from '../utils/pipelineHelpers';
 
 const STAGE_ICONS = {
   audio: HourglassEmpty,
@@ -17,7 +18,6 @@ const STAGE_ICONS = {
   transcript: Transcribe,
   generation: AutoAwesome,
   clips: ContentCut,
-  clip_upload: Upload,
   refinement: TuneOutlined,
 };
 
@@ -26,12 +26,11 @@ const STAGE_LABELS = {
   audio_upload: 'Uploading Audio',
   transcript: 'Transcribing',
   generation: 'Generating Moments',
-  clips: 'Extracting Clips',
-  clip_upload: 'Uploading Clips',
+  clips: 'Processing Clips',
   refinement: 'Refining',
 };
 
-const PipelineStatusBadge = ({ status, currentStage, onClick }) => {
+const PipelineStatusBadge = ({ status, currentStage, subStage, onClick }) => {
   if (!status || status === 'never_run' || status === 'not_running') {
     return null;
   }
@@ -91,7 +90,12 @@ const PipelineStatusBadge = ({ status, currentStage, onClick }) => {
       return 'Queued';
     }
     if (status === 'processing' && currentStage) {
-      return STAGE_LABELS[currentStage] || 'Processing';
+      const label = STAGE_LABELS[currentStage] || 'Processing';
+      if (subStage) {
+        const brief = getSubStageBriefLabel(subStage);
+        return brief ? `${label} (${brief})` : label;
+      }
+      return label;
     }
     return 'Processing';
   };

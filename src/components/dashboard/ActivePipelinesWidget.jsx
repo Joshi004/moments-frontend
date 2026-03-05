@@ -12,6 +12,7 @@ import {
 import { Timeline } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { getActivePipelines } from '../../services/api';
+import { SUB_STAGE_LABELS } from '../../utils/pipelineHelpers';
 
 const STAGE_LABELS = {
   download: 'Downloading',
@@ -19,8 +20,7 @@ const STAGE_LABELS = {
   audio_upload: 'Uploading Audio',
   transcript: 'Transcribing',
   generation: 'Generating Moments',
-  clips: 'Extracting Clips',
-  clip_upload: 'Uploading Clips',
+  clips: 'Processing Clips',
   refinement: 'Refining Moments',
 };
 
@@ -106,6 +106,9 @@ const ActivePipelinesWidget = ({ videos = [], initialActivePipelines = [] }) => 
             const filename = getVideoFilename(pipeline.videoId);
             const stageLabel = STAGE_LABELS[pipeline.current_stage] || 'Processing';
             const elapsed = elapsedTimes[pipeline.videoId] || 0;
+            const currentStageData = pipeline.stages?.[pipeline.current_stage];
+            const subStage = currentStageData?.sub_stage;
+            const subStageLabel = subStage ? SUB_STAGE_LABELS[subStage] : null;
 
             return (
               <Box
@@ -146,10 +149,17 @@ const ActivePipelinesWidget = ({ videos = [], initialActivePipelines = [] }) => 
                   />
                 </Box>
                 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="caption" color="text.secondary">
-                    {stageLabel}
-                  </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {stageLabel}
+                    </Typography>
+                    {subStageLabel && (
+                      <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', display: 'block' }}>
+                        {subStageLabel}
+                      </Typography>
+                    )}
+                  </Box>
                   <Typography variant="caption" color="text.secondary">
                     Elapsed: {formatElapsedTime(elapsed)}
                   </Typography>

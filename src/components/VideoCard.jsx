@@ -227,6 +227,7 @@ const VideoCard = ({
           <PipelineStatusBadge
             status={pipelineStatus.status}
             currentStage={pipelineStatus.current_stage}
+            subStage={pipelineStatus.stages?.[pipelineStatus.current_stage]?.sub_stage}
             onClick={handlePipelineStatusClick}
           />
         )}

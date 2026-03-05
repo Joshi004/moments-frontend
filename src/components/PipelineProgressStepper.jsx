@@ -15,6 +15,7 @@ import {
 import { Cancel } from '@mui/icons-material';
 import {
   STAGE_ORDER,
+  SUB_STAGE_LABELS,
   formatDuration,
   formatBytes,
   getStepIcon,
@@ -186,6 +187,35 @@ const PipelineProgressStepper = ({
                   </Box>
                 )}
 
+                {/* Sub-stage label */}
+                {stageData && stageData.status === 'processing' && stageData.sub_stage && (
+                  <Box sx={{ pl: 2, py: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                      {SUB_STAGE_LABELS[stageData.sub_stage] || stageData.sub_stage}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Sub-stage download progress (for hidden downloads inside non-download stages) */}
+                {stageData && stageData.status === 'processing' &&
+                 (stageData.sub_stage === 'downloading_video' || stageData.sub_stage === 'downloading') &&
+                 stage.key !== 'download' &&
+                 stageData.progress?.total_bytes && (
+                  <Box sx={{ pl: 2, py: 1 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {formatBytes(stageData.progress.bytes_downloaded || 0)} / {formatBytes(stageData.progress.total_bytes)}
+                    </Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={stageData.progress.percentage || 0}
+                      sx={{ height: 6, borderRadius: 1 }}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                      {stageData.progress.percentage || 0}%
+                    </Typography>
+                  </Box>
+                )}
+
                 {/* Download Progress */}
                 {stage.key === 'download' && stageData && stageData.progress && 
                  stageData.progress.total_bytes && (
@@ -210,24 +240,6 @@ const PipelineProgressStepper = ({
                   <Box sx={{ pl: 2, py: 1 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       {formatBytes(stageData.progress.bytes_uploaded || 0)} / {formatBytes(stageData.progress.total_bytes)}
-                    </Typography>
-                    <LinearProgress
-                      variant="determinate"
-                      value={stageData.progress.percentage || 0}
-                      sx={{ height: 6, borderRadius: 1 }}
-                    />
-                  </Box>
-                )}
-
-                {/* Clip Upload Progress */}
-                {stage.key === 'clip_upload' && stageData && stageData.progress && 
-                 stageData.progress.total_clips && (
-                  <Box sx={{ pl: 2, py: 1 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      Uploading clip {stageData.progress.current_clip || 0} of {stageData.progress.total_clips}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                      {formatBytes(stageData.progress.bytes_uploaded || 0)} / {formatBytes(stageData.progress.total_bytes || 0)}
                     </Typography>
                     <LinearProgress
                       variant="determinate"
