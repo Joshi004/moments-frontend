@@ -13,15 +13,14 @@ import {
 } from '@mui/icons-material';
 import { CircularProgress } from '@mui/material';
 
-// All 8 stages -- always shown, download appears as "Skipped" when N/A
+// All 7 stages -- always shown, download appears as "Skipped" when N/A
 export const STAGE_ORDER = [
   { key: 'download', label: 'Video Download', icon: CloudDownload },
   { key: 'audio', label: 'Audio Extraction', icon: HourglassEmpty },
   { key: 'audio_upload', label: 'Audio Upload', icon: Upload },
   { key: 'transcript', label: 'Transcription', icon: Transcribe },
   { key: 'generation', label: 'Moment Generation', icon: AutoAwesome },
-  { key: 'clips', label: 'Clip Extraction', icon: ContentCut },
-  { key: 'clip_upload', label: 'Clip Upload', icon: Upload },
+  { key: 'clips', label: 'Clip Processing', icon: ContentCut },
   { key: 'refinement', label: 'Moment Refinement', icon: TuneOutlined },
 ];
 
@@ -60,6 +59,21 @@ export const getStepIcon = (stageKey, stages) => {
     return <CircularProgress size={20} />;
   }
   return <HourglassEmpty sx={{ fontSize: 20, color: 'text.secondary' }} />;
+};
+
+export const SUB_STAGE_LABELS = {
+  downloading: 'Downloading video...',
+  extracting_metadata: 'Analyzing video...',
+  uploading_to_cloud: 'Uploading to cloud...',
+  saving: 'Saving...',
+  downloading_video: 'Fetching video from cloud...',
+  extracting_audio: 'Running audio extraction...',
+  processing_clips: 'Extracting & uploading clips...',
+};
+
+export const getSubStageBriefLabel = (subStage) => {
+  const label = SUB_STAGE_LABELS[subStage];
+  return label ? label.replace('...', '').trim().toLowerCase() : null;
 };
 
 export const getStepStatus = (stageKey, stages) => {
