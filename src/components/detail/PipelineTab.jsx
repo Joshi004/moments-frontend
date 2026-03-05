@@ -25,7 +25,7 @@ const PipelineTab = ({
   // #endregion
   
   // Poll for active pipeline status
-  const { status, currentStage, stages, error, totalDuration } = usePipelineStatus(videoId, true);
+  const { status, currentStage, stages, error, totalDuration, startedAt } = usePipelineStatus(videoId, true);
 
   const isRunning = status === 'processing' || status === 'queued' || status === 'pending';
   const hasCompleted = status === 'completed' || status === 'failed' || status === 'cancelled';
@@ -67,6 +67,7 @@ const PipelineTab = ({
               stages={stages}
               error={error}
               totalDuration={totalDuration}
+              startedAt={startedAt}
               videoId={videoId}
               onCancel={onCancelPipeline}
             />

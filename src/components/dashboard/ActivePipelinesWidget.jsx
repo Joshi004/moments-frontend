@@ -12,7 +12,7 @@ import {
 import { Timeline } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { getActivePipelines } from '../../services/api';
-import { SUB_STAGE_LABELS } from '../../utils/pipelineHelpers';
+import { SUB_STAGE_LABELS, formatDuration } from '../../utils/pipelineHelpers';
 
 const STAGE_LABELS = {
   download: 'Downloading',
@@ -27,7 +27,8 @@ const STAGE_LABELS = {
 const ActivePipelinesWidget = ({ videos = [], initialActivePipelines = [] }) => {
   const navigate = useNavigate();
   const [activePipelines, setActivePipelines] = useState(initialActivePipelines);
-  const [elapsedTimes, setElapsedTimes] = useState({});
+  // Tick counter used only to trigger re-renders every second for elapsed time display
+  const [, setTick] = useState(0);
 
   // Polling effect for active pipelines
   useEffect(() => {
@@ -46,31 +47,12 @@ const ActivePipelinesWidget = ({ videos = [], initialActivePipelines = [] }) => 
     return () => clearInterval(pollInterval);
   }, [activePipelines.length]);
 
-  // Elapsed time counter
+  // Single tick interval to refresh elapsed time display every second
   useEffect(() => {
     if (activePipelines.length === 0) return;
-
-    const timeInterval = setInterval(() => {
-      const newElapsed = {};
-      activePipelines.forEach(pipeline => {
-        const current = elapsedTimes[pipeline.videoId] || 0;
-        newElapsed[pipeline.videoId] = current + 1;
-      });
-      setElapsedTimes(newElapsed);
-    }, 1000);
-
-    return () => clearInterval(timeInterval);
-  }, [activePipelines, elapsedTimes]);
-
-  const formatElapsedTime = (seconds) => {
-    if (!seconds) return '0s';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    if (mins > 0) {
-      return `${mins}m ${secs}s`;
-    }
-    return `${secs}s`;
-  };
+    const tickInterval = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(tickInterval);
+  }, [activePipelines.length]);
 
   const getVideoFilename = (videoId) => {
     const video = videos.find(v => v.id === videoId);
@@ -105,7 +87,9 @@ const ActivePipelinesWidget = ({ videos = [], initialActivePipelines = [] }) => 
           {activePipelines.map((pipeline) => {
             const filename = getVideoFilename(pipeline.videoId);
             const stageLabel = STAGE_LABELS[pipeline.current_stage] || 'Processing';
-            const elapsed = elapsedTimes[pipeline.videoId] || 0;
+            const elapsed = pipeline.started_at
+              ? Math.max(0, Math.floor((Date.now() - new Date(pipeline.started_at).getTime()) / 1000))
+              : 0;
             const currentStageData = pipeline.stages?.[pipeline.current_stage];
             const subStage = currentStageData?.sub_stage;
             const subStageLabel = subStage ? SUB_STAGE_LABELS[subStage] : null;
@@ -161,7 +145,7 @@ const ActivePipelinesWidget = ({ videos = [], initialActivePipelines = [] }) => 
                     )}
                   </Box>
                   <Typography variant="caption" color="text.secondary">
-                    Elapsed: {formatElapsedTime(elapsed)}
+                    Elapsed: {formatDuration(elapsed)}
                   </Typography>
                 </Box>
               </Box>

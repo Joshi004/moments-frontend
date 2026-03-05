@@ -9,7 +9,7 @@ import usePipelineStatus from '../hooks/usePipelineStatus';
 import PipelineProgressStepper from './PipelineProgressStepper';
 
 const PipelineProgressModal = ({ open, onClose, videoId, onCancel }) => {
-  const { status, currentStage, stages, error, totalDuration } = usePipelineStatus(videoId, open);
+  const { status, currentStage, stages, error, totalDuration, startedAt } = usePipelineStatus(videoId, open);
 
   const isRunning = status === 'processing' || status === 'queued' || status === 'pending';
 
@@ -39,6 +39,7 @@ const PipelineProgressModal = ({ open, onClose, videoId, onCancel }) => {
           stages={stages}
           error={error}
           totalDuration={totalDuration}
+          startedAt={startedAt}
           videoId={videoId}
           onCancel={handleCancel}
         />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import {
   Box,
@@ -21,6 +21,7 @@ import {
   getStepIcon,
   getStepStatus,
 } from '../utils/pipelineHelpers';
+import useElapsedTime from '../hooks/useElapsedTime';
 
 /**
  * Shared pipeline progress stepper component.
@@ -33,32 +34,17 @@ const PipelineProgressStepper = ({
   stages,
   error,
   totalDuration,
+  startedAt,
   videoId,
   requestId,
   onCancel,
 }) => {
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [startTime, setStartTime] = useState(null);
-
   const isComplete = status === 'completed';
   const isFailed = status === 'failed';
   const isCancelled = status === 'cancelled';
   const isRunning = status === 'processing' || status === 'queued' || status === 'pending';
 
-  // Elapsed time counter
-  useEffect(() => {
-    if (isRunning) {
-      if (!startTime) {
-        setStartTime(Date.now());
-      }
-      const interval = setInterval(() => {
-        if (startTime) {
-          setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
-        }
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [isRunning, startTime]);
+  const elapsedTime = useElapsedTime(isRunning ? startedAt : null);
 
   const getActiveStep = () => {
     if (!currentStage) {
@@ -320,6 +306,7 @@ PipelineProgressStepper.propTypes = {
   stages: PropTypes.object,
   error: PropTypes.string,
   totalDuration: PropTypes.number,
+  startedAt: PropTypes.string,
 
   // Identity
   videoId: PropTypes.string,
@@ -333,6 +320,7 @@ PipelineProgressStepper.defaultProps = {
   stages: {},
   error: null,
   totalDuration: null,
+  startedAt: null,
   requestId: null,
   onCancel: null,
 };

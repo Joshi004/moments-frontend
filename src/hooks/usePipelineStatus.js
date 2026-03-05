@@ -6,7 +6,7 @@ import { getPipelineStatus } from '../services/api';
  * 
  * @param {string} videoId - The video ID to track
  * @param {boolean} isActive - Whether to actively poll for status
- * @returns {Object} { status, currentStage, stages, error, isLoading, totalDuration }
+ * @returns {Object} { status, currentStage, stages, error, isLoading, totalDuration, startedAt }
  */
 const usePipelineStatus = (videoId, isActive) => {
   const [status, setStatus] = useState(null);
@@ -15,6 +15,7 @@ const usePipelineStatus = (videoId, isActive) => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [totalDuration, setTotalDuration] = useState(null);
+  const [startedAt, setStartedAt] = useState(null);
   const pollIntervalRef = useRef(null);
   const mountedRef = useRef(true);
 
@@ -41,6 +42,7 @@ const usePipelineStatus = (videoId, isActive) => {
         setCurrentStage(data.current_stage);
         setStages(data.stages || {});
         setTotalDuration(data.total_duration_seconds);
+        setStartedAt(data.started_at || null);
         setError(null);
 
         // Stop polling if pipeline has finished
@@ -96,6 +98,7 @@ const usePipelineStatus = (videoId, isActive) => {
     error,
     isLoading,
     totalDuration,
+    startedAt,
   };
 };
 

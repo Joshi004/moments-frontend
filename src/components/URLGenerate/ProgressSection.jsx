@@ -1,28 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Paper, Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
+import React, { useState } from 'react';
+import { Paper, Box, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { Cancel as CancelIcon } from '@mui/icons-material';
 import usePipelineStatus from '../../hooks/usePipelineStatus';
 import PipelineProgressStepper from '../PipelineProgressStepper';
 
 const ProgressSection = ({ videoId, requestId, onCancel }) => {
-  const { status, currentStage, stages, error, totalDuration } = usePipelineStatus(videoId, true);
-  const [elapsed, setElapsed] = useState(0);
+  const { status, currentStage, stages, error, totalDuration, startedAt } = usePipelineStatus(videoId, true);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-
-  // Elapsed time counter
-  useEffect(() => {
-    const start = Date.now();
-    const timer = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - start) / 1000));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatElapsed = (secs) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
 
   const handleCancelClick = () => {
     setCancelDialogOpen(true);
@@ -42,16 +26,13 @@ const ProgressSection = ({ videoId, requestId, onCancel }) => {
           stages={stages}
           error={error}
           totalDuration={totalDuration}
+          startedAt={startedAt}
           videoId={videoId}
           requestId={requestId}
           onCancel={onCancel}
         />
-        
-        {/* Elapsed time and cancel button */}
-        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            Elapsed time: <strong>{formatElapsed(elapsed)}</strong>
-          </Typography>
+
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
           <Button
             variant="outlined"
             color="error"

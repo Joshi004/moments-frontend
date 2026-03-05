@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import useElapsedTime from '../../hooks/useElapsedTime';
 import {
   Card,
   CardContent,
@@ -17,6 +18,10 @@ import PipelineConfirmDialog from '../PipelineConfirmDialog';
 const ActivePipelineCard = ({ pipelineStatus, videoInfo, onCancel }) => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
+  // Extract startedAt before the early return so the hook call is unconditional
+  const startedAt = pipelineStatus?.started_at || null;
+  const elapsedTime = useElapsedTime(startedAt);
+
   if (!pipelineStatus) return null;
 
   const {
@@ -24,7 +29,6 @@ const ActivePipelineCard = ({ pipelineStatus, videoInfo, onCancel }) => {
     status,
     current_stage: currentStage,
     stages = {},
-    elapsed_time: elapsedTime,
   } = pipelineStatus;
 
   const filename = videoInfo?.filename || videoId;
