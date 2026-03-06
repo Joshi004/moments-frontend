@@ -14,6 +14,7 @@ import EmptyState from '../common/EmptyState';
 
 const MomentsSidebar = ({
   moments = [],
+  clipMap = {},
   currentTime,
   onMomentClick,
   onAddMomentClick,
@@ -165,12 +166,16 @@ const MomentsSidebar = ({
         ) : (
           displayedMoments.map((moment) => {
             const isActive = activeMoment?.id === moment.id;
-            
+            // Refined moments share their parent coarse moment's clip
+            const clipKey = moment.is_refined ? moment.parent_id : moment.id;
+            const hasClip = !!clipMap[clipKey];
+
             return (
               <MomentCard
                 key={moment.id || `${moment.start_time}-${moment.end_time}`}
                 moment={moment}
                 isActive={isActive}
+                hasClip={hasClip}
                 onClick={onMomentClick}
                 onDeleteClick={onDeleteMoment}
                 onConfigClick={onConfigClick}

@@ -21,6 +21,7 @@ const TabPanel = ({ children, value, index }) => {
 const InfoTabs = ({
   video,
   moments,
+  clipMap = {},
   transcript,
   currentTime,
   pipelineHistory,
@@ -39,10 +40,8 @@ const InfoTabs = ({
     setSelectedTab(newValue);
   };
 
-  // Count only moments that have an actual extracted clip
-  const clipCount = useMemo(() => {
-    return moments.filter(m => !m.is_refined && m.clip != null).length;
-  }, [moments]);
+  // Count available clips using the clips API map (keyed by moment_identifier)
+  const clipCount = useMemo(() => Object.keys(clipMap).length, [clipMap]);
 
   return (
     <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>

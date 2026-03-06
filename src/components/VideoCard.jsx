@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, Typography, Box, Skeleton, IconButton, Menu, MenuItem, Divider, Chip, Stack } from '@mui/material';
 import { PlayCircleOutline, MoreVert as MoreVertIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { getThumbnailUrl, getBackendBaseUrl } from '../services/api';
+import useThumbnailUrl from '../hooks/useThumbnailUrl';
 import PipelineStatusBadge from './PipelineStatusBadge';
 import { formatDuration } from '../utils/formatters';
 
@@ -19,9 +19,7 @@ const VideoCard = ({
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const navigate = useNavigate();
   
-  const thumbnailUrl = video.thumbnail_url 
-    ? `${getBackendBaseUrl()}${video.thumbnail_url}`
-    : getThumbnailUrl(video.id);
+  const thumbnailUrl = useThumbnailUrl(video);
 
   const handleImageLoad = () => {
     setImageLoaded(true);
@@ -125,6 +123,7 @@ const VideoCard = ({
             component="img"
             src={thumbnailUrl}
             alt={video.title}
+            loading="lazy"
             onLoad={handleImageLoad}
             onError={handleImageError}
             sx={{
@@ -135,7 +134,8 @@ const VideoCard = ({
               height: '100%',
               objectFit: 'cover',
               objectPosition: 'center',
-              display: imageLoaded ? 'block' : 'none',
+              opacity: imageLoaded ? 1 : 0,
+              transition: 'opacity 0.3s ease-in-out',
             }}
           />
         )}

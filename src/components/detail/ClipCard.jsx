@@ -172,12 +172,12 @@ const ClipCard = ({ moment, videoId, clipAvailable = false, clipUrl = null, clip
             }}
             onClick={handlePlay}
           >
-            {/* Show first frame of clip as thumbnail via preload="metadata" */}
             {clipUrl && (
               <video
-                src={clipUrl}
+                src={`${clipUrl}#t=0.1`}
                 preload="metadata"
                 muted
+                playsInline
                 style={{
                   width: '100%',
                   height: '100%',

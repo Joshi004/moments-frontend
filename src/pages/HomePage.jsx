@@ -9,6 +9,7 @@ import PageHeader from '../components/common/PageHeader';
 import LibraryToolbar from '../components/library/LibraryToolbar';
 import SkeletonCard from '../components/common/SkeletonCard';
 import useDebounce from '../hooks/useDebounce';
+import { removeThumbnailCacheEntry, cleanupExpiredThumbnailCache } from '../hooks/useThumbnailUrl';
 import { getVideos, startPipeline, getPipelineStatus, cancelPipeline, deleteVideo } from '../services/api';
 import { useNotifications } from '../contexts/NotificationContext';
 
@@ -45,6 +46,7 @@ const HomePage = () => {
 
   useEffect(() => {
     fetchVideos();
+    cleanupExpiredThumbnailCache();
   }, []);
 
   // Cleanup polling on unmount
@@ -261,6 +263,8 @@ const HomePage = () => {
       setDeleteModalOpen(false);
       setVideoToDelete(null);
       setIsDeleting(false);
+
+      removeThumbnailCacheEntry(videoId);
 
       // Refresh video list
       await fetchVideos();

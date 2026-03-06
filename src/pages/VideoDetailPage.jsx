@@ -20,6 +20,7 @@ import {
   startPipeline,
   cancelPipeline,
   getPipelineHistory,
+  getClipsForVideo,
 } from '../services/api';
 
 const VideoDetailPage = () => {
@@ -31,6 +32,7 @@ const VideoDetailPage = () => {
   const [video, setVideo] = useState(null);
   const [videos, setVideos] = useState([]);
   const [moments, setMoments] = useState([]);
+  const [clipMap, setClipMap] = useState({});
   const [transcript, setTranscript] = useState(null);
   const [pipelineHistory, setPipelineHistory] = useState([]);
   const [currentTime, setCurrentTime] = useState(0);
@@ -59,22 +61,34 @@ const VideoDetailPage = () => {
   }, [id]);
 
 
+  const buildClipMap = (clips) => {
+    const map = {};
+    clips.forEach(clip => {
+      if (clip.moment_identifier) {
+        map[clip.moment_identifier] = clip;
+      }
+    });
+    return map;
+  };
+
   const fetchVideoData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [videoData, momentsData, transcriptData, historyData] = await Promise.all([
+      const [videoData, momentsData, transcriptData, historyData, clipsData] = await Promise.all([
         getVideo(id),
         getMoments(id).catch(() => []),
         getTranscript(id).catch(() => null),
         getPipelineHistory(id).catch(() => []),
+        getClipsForVideo(id).catch(() => []),
       ]);
 
       setVideo(videoData);
       setMoments(momentsData);
       setTranscript(transcriptData);
       setPipelineHistory(historyData);
+      setClipMap(buildClipMap(clipsData));
     } catch (err) {
       console.error('Error fetching video data:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to load video');
@@ -103,8 +117,12 @@ const VideoDetailPage = () => {
 
   const fetchMomentsData = async () => {
     try {
-      const momentsData = await getMoments(id);
+      const [momentsData, clipsData] = await Promise.all([
+        getMoments(id),
+        getClipsForVideo(id).catch(() => []),
+      ]);
       setMoments(momentsData);
+      setClipMap(buildClipMap(clipsData));
     } catch (err) {
       console.error('Error fetching moments:', err);
     }
@@ -372,6 +390,7 @@ const VideoDetailPage = () => {
                 <InfoTabs
                   video={video}
                   moments={moments}
+                  clipMap={clipMap}
                   transcript={transcript}
                   currentTime={currentTime}
                   pipelineHistory={pipelineHistory}
@@ -401,6 +420,7 @@ const VideoDetailPage = () => {
             >
               <MomentsSidebar
                 moments={moments}
+                clipMap={clipMap}
                 currentTime={currentTime}
                 onMomentClick={handleMomentClick}
                 onAddMomentClick={handleAddMomentClick}

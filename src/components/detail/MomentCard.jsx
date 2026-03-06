@@ -14,9 +14,10 @@ import {
   DialogContentText,
   DialogActions,
   Button,
+  Tooltip,
   useTheme,
 } from '@mui/material';
-import { PlayArrow, MoreVert, Info, Delete, BrokenImage } from '@mui/icons-material';
+import { PlayArrow, MoreVert, Info, Delete, WarningAmber } from '@mui/icons-material';
 
 const formatTime = (seconds) => {
   if (isNaN(seconds)) return '0:00';
@@ -52,6 +53,7 @@ const getModelName = (moment) => {
 const MomentCard = ({
   moment,
   isActive,
+  hasClip,
   onClick,
   onDeleteClick,
   onConfigClick,
@@ -194,6 +196,12 @@ const MomentCard = ({
               >
                 Duration: {formatDuration(moment.start_time, moment.end_time)}
               </Typography>
+
+              {!hasClip && (
+                <Tooltip title="Clip not available for this moment" placement="top" arrow>
+                  <WarningAmber sx={{ fontSize: 14, color: 'warning.main', opacity: 0.7 }} />
+                </Tooltip>
+              )}
             </Box>
 
             {/* Model Chip */}
@@ -212,30 +220,6 @@ const MomentCard = ({
               </Box>
             )}
 
-            {/* Clip not available indicator */}
-            {(!moment.clip || !moment.clip?.cloud_url) && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 0.5,
-                  mt: 1,
-                  p: 1.5,
-                  borderRadius: 1,
-                  backgroundColor: 'action.hover',
-                }}
-              >
-                <BrokenImage sx={{ fontSize: 24, color: 'text.disabled' }} />
-                <Typography variant="caption" color="text.secondary">
-                  Clip not available
-                </Typography>
-                <Typography variant="caption" color="text.disabled">
-                  Re-run the pipeline to regenerate this clip.
-                </Typography>
-              </Box>
-            )}
           </CardContent>
         </Card>
       </Box>
