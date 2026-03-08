@@ -214,13 +214,17 @@ export const getActivePipelines = async () => {
 };
 
 // URL-based moment generation
-export const generateMomentsFromUrl = async (videoUrl, forceDownload, config) => {
+export const generateMomentsFromUrl = async (videoUrl, forceDownload, config, title) => {
   try {
-    const response = await api.post('/pipeline/start', {
+    const payload = {
       video_url: videoUrl,
       force_download: forceDownload,
-      ...config
-    });
+      ...config,
+    };
+    if (title && title.trim()) {
+      payload.title = title.trim();
+    }
+    const response = await api.post('/pipeline/start', payload);
     return response.data;
   } catch (error) {
     console.error('Error generating moments from URL:', error);

@@ -64,7 +64,17 @@ const validateUrl = (urlString) => {
   }
 };
 
-const URLInputSection = ({ url, onUrlChange, forceDownload, onForceDownloadChange, disabled, error }) => {
+export const generateTitlePreview = (url) => {
+  try {
+    const pathname = new URL(url).pathname;
+    const stem = decodeURIComponent(pathname.split('/').pop().replace(/\.[^.]+$/, ''));
+    return stem.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  } catch {
+    return '';
+  }
+};
+
+const URLInputSection = ({ url, onUrlChange, title, onTitleChange, forceDownload, onForceDownloadChange, disabled, error }) => {
   const [validationError, setValidationError] = useState(null);
   const [isValid, setIsValid] = useState(null);
   const recentUrls = getRecentUrls();
@@ -138,6 +148,19 @@ const URLInputSection = ({ url, onUrlChange, forceDownload, onForceDownloadChang
             padding: '0 14px',
           },
         }}
+      />
+
+      <TextField
+        fullWidth
+        label="Video Title"
+        placeholder="Auto-generated from URL if left blank"
+        value={title}
+        onChange={(e) => onTitleChange(e.target.value)}
+        disabled={disabled}
+        variant="outlined"
+        inputProps={{ maxLength: 500 }}
+        helperText="Optional — edit to override the auto-generated title"
+        sx={{ mb: 2 }}
       />
 
       {/* Recent URLs */}

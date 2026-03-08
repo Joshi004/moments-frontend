@@ -16,7 +16,7 @@ import {
   ProgressSection,
   ResultsSection,
 } from '../components/URLGenerate';
-import { addRecentUrl } from '../components/URLGenerate/URLInputSection';
+import { addRecentUrl, generateTitlePreview } from '../components/URLGenerate/URLInputSection';
 import {
   generateMomentsFromUrl,
   getMoments,
@@ -67,8 +67,14 @@ const StepHeader = ({ number, title, subtitle, active }) => (
 const URLGeneratePage = () => {
   // Form state
   const [url, setUrl] = useState('');
+  const [title, setTitle] = useState('');
   const [forceDownload, setForceDownload] = useState(false);
   const [config, setConfig] = useState(DEFAULT_CONFIG);
+
+  // Auto-populate title preview when URL changes
+  useEffect(() => {
+    setTitle(generateTitlePreview(url));
+  }, [url]);
 
   // Page state
   const [pageState, setPageState] = useState('idle');
@@ -174,7 +180,7 @@ const URLGeneratePage = () => {
 
     try {
       // Call API
-      const response = await generateMomentsFromUrl(url, forceDownload, config);
+      const response = await generateMomentsFromUrl(url, forceDownload, config, title);
 
       // Store response data
       setVideoId(response.video_id);
@@ -213,6 +219,7 @@ const URLGeneratePage = () => {
   const handleReset = () => {
     // Reset all state
     setUrl('');
+    setTitle('');
     setForceDownload(false);
     setConfig(DEFAULT_CONFIG);
     setPageState('idle');
@@ -250,6 +257,8 @@ const URLGeneratePage = () => {
         <URLInputSection
           url={url}
           onUrlChange={setUrl}
+          title={title}
+          onTitleChange={setTitle}
           forceDownload={forceDownload}
           onForceDownloadChange={setForceDownload}
           disabled={isProcessing}
