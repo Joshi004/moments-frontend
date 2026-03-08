@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef, useCallback } from 'react';
-import { Box } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import VideoControls from './VideoControls';
 import VideoCaptions from './VideoCaptions';
 import { getVideoUrl } from '../services/api';
+import useThumbnailUrl from '../hooks/useThumbnailUrl';
 
 const VideoPlayer = forwardRef(({
   video,
@@ -52,6 +53,9 @@ const VideoPlayer = forwardRef(({
   // State for URL lifecycle management
   const [videoSrc, setVideoSrc] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [isBuffering, setIsBuffering] = useState(true);
+
+  const thumbnailUrl = useThumbnailUrl(video);
 
   // Proactive URL refresh function
   const refreshUrl = useCallback(async () => {
@@ -208,9 +212,10 @@ const VideoPlayer = forwardRef(({
         videoElement.volume = volume / 100;
         videoElement.muted = isMuted;
       }
-      // Reset captions when video changes
+      // Reset captions and buffering state when video changes
       setCaptionsEnabled(false);
       setCurrentCaptionText('');
+      setIsBuffering(true);
     }
   }, [video, volume, isMuted]);
 
@@ -248,6 +253,11 @@ const VideoPlayer = forwardRef(({
       setCurrentTime(0);
     };
 
+    const handleLoadStart = () => setIsBuffering(true);
+    const handleWaiting = () => setIsBuffering(true);
+    const handleCanPlay = () => setIsBuffering(false);
+    const handlePlaying = () => setIsBuffering(false);
+
     const handleLoadedDataAutoPlay = () => {
       if (isInitialLoad.current && videoRef.current) {
         isInitialLoad.current = false;
@@ -266,6 +276,10 @@ const VideoPlayer = forwardRef(({
     videoElement.addEventListener('play', handlePlay);
     videoElement.addEventListener('pause', handlePause);
     videoElement.addEventListener('ended', handleEnded);
+    videoElement.addEventListener('loadstart', handleLoadStart);
+    videoElement.addEventListener('waiting', handleWaiting);
+    videoElement.addEventListener('canplay', handleCanPlay);
+    videoElement.addEventListener('playing', handlePlaying);
 
     // Initial duration check
     if (videoElement.duration) {
@@ -282,6 +296,10 @@ const VideoPlayer = forwardRef(({
       videoElement.removeEventListener('play', handlePlay);
       videoElement.removeEventListener('pause', handlePause);
       videoElement.removeEventListener('ended', handleEnded);
+      videoElement.removeEventListener('loadstart', handleLoadStart);
+      videoElement.removeEventListener('waiting', handleWaiting);
+      videoElement.removeEventListener('canplay', handleCanPlay);
+      videoElement.removeEventListener('playing', handlePlaying);
     };
   }, [video, onTimeUpdate]);
 
@@ -509,6 +527,8 @@ const VideoPlayer = forwardRef(({
         <video
           ref={videoRef}
           src={videoSrc}
+          poster={thumbnailUrl}
+          preload="auto"
           controls={false}
           style={{
             width: '100%',
@@ -523,6 +543,24 @@ const VideoPlayer = forwardRef(({
           }}
           onError={handleVideoError}
         />
+
+        {isBuffering && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+            }}
+          >
+            <CircularProgress size={56} sx={{ color: 'white', opacity: 0.85 }} />
+          </Box>
+        )}
 
         <VideoControls
           isPlaying={isPlaying}
