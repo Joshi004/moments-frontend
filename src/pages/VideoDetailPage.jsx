@@ -161,6 +161,13 @@ const VideoDetailPage = () => {
     }
   };
 
+  // Moment play click - seek and start playing
+  const handleMomentPlayClick = (startTime) => {
+    if (playerRef.current) {
+      playerRef.current.seekAndPlay(startTime);
+    }
+  };
+
   // Seek to specific time (for transcript tab)
   const handleSeekTo = (time) => {
     if (playerRef.current) {
@@ -423,6 +430,7 @@ const VideoDetailPage = () => {
                 clipMap={clipMap}
                 currentTime={currentTime}
                 onMomentClick={handleMomentClick}
+                onMomentPlayClick={handleMomentPlayClick}
                 onAddMomentClick={handleAddMomentClick}
                 onDeleteMoment={handleDeleteMoment}
                 onConfigClick={handleConfigClick}

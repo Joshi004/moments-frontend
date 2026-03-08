@@ -17,14 +17,24 @@ const VideoPlayer = forwardRef(({
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const refreshTimerRef = useRef(null);
+  const isInitialLoad = useRef(true);
 
-  // Expose seekTo method via ref
+  // Expose seekTo and seekAndPlay methods via ref
   useImperativeHandle(ref, () => ({
     seekTo: (time) => {
       if (videoRef.current) {
         const clampedTime = Math.max(0, Math.min(time, videoRef.current.duration || 0));
         videoRef.current.currentTime = clampedTime;
         setCurrentTime(clampedTime);
+      }
+    },
+    seekAndPlay: (time) => {
+      if (videoRef.current) {
+        const clampedTime = Math.max(0, Math.min(time, videoRef.current.duration || 0));
+        videoRef.current.currentTime = clampedTime;
+        setCurrentTime(clampedTime);
+        videoRef.current.play().catch(() => {});
+        setIsPlaying(true);
       }
     },
   }));
@@ -149,6 +159,8 @@ const VideoPlayer = forwardRef(({
   // Initial URL fetch and timer setup
   useEffect(() => {
     if (!video) return;
+
+    isInitialLoad.current = true;
     
     const loadVideoUrl = async () => {
       try {
@@ -236,10 +248,20 @@ const VideoPlayer = forwardRef(({
       setCurrentTime(0);
     };
 
+    const handleLoadedDataAutoPlay = () => {
+      if (isInitialLoad.current && videoRef.current) {
+        isInitialLoad.current = false;
+        videoRef.current.play().catch(() => {
+          // Browser blocked auto-play (e.g. no prior interaction); stay paused silently
+        });
+      }
+    };
+
     // Add event listeners
     videoElement.addEventListener('timeupdate', updateTime);
     videoElement.addEventListener('loadedmetadata', updateDuration);
     videoElement.addEventListener('loadeddata', updateDuration);
+    videoElement.addEventListener('loadeddata', handleLoadedDataAutoPlay);
     videoElement.addEventListener('durationchange', updateDuration);
     videoElement.addEventListener('play', handlePlay);
     videoElement.addEventListener('pause', handlePause);
@@ -255,6 +277,7 @@ const VideoPlayer = forwardRef(({
       videoElement.removeEventListener('timeupdate', updateTime);
       videoElement.removeEventListener('loadedmetadata', updateDuration);
       videoElement.removeEventListener('loadeddata', updateDuration);
+      videoElement.removeEventListener('loadeddata', handleLoadedDataAutoPlay);
       videoElement.removeEventListener('durationchange', updateDuration);
       videoElement.removeEventListener('play', handlePlay);
       videoElement.removeEventListener('pause', handlePause);

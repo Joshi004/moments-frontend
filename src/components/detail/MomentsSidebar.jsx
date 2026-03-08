@@ -17,6 +17,7 @@ const MomentsSidebar = ({
   clipMap = {},
   currentTime,
   onMomentClick,
+  onMomentPlayClick,
   onAddMomentClick,
   onDeleteMoment,
   onConfigClick,
@@ -177,6 +178,7 @@ const MomentsSidebar = ({
                 isActive={isActive}
                 hasClip={hasClip}
                 onClick={onMomentClick}
+                onPlayClick={onMomentPlayClick}
                 onDeleteClick={onDeleteMoment}
                 onConfigClick={onConfigClick}
               />

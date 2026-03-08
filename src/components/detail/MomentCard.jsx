@@ -55,6 +55,7 @@ const MomentCard = ({
   isActive,
   hasClip,
   onClick,
+  onPlayClick,
   onDeleteClick,
   onConfigClick,
 }) => {
@@ -75,6 +76,13 @@ const MomentCard = ({
 
   const handleCardClick = () => {
     onClick(moment.start_time);
+  };
+
+  const handlePlayClick = (e) => {
+    e.stopPropagation();
+    if (onPlayClick) {
+      onPlayClick(moment.start_time);
+    }
   };
 
   const handleMenuOpen = (e) => {
@@ -170,7 +178,14 @@ const MomentCard = ({
                 >
                   <MoreVert fontSize="small" />
                 </IconButton>
-                <PlayArrow sx={{ opacity: isActive ? 1 : 0.5, ml: 0.5 }} />
+                <IconButton
+                  size="small"
+                  onClick={handlePlayClick}
+                  title="Play from this moment"
+                  sx={{ opacity: isActive ? 1 : 0.5, '&:hover': { opacity: 1 } }}
+                >
+                  <PlayArrow />
+                </IconButton>
               </Box>
             </Box>
 
